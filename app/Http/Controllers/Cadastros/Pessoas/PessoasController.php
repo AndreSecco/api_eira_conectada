@@ -65,15 +65,18 @@ class PessoasController extends Controller
     public function getListaPessoasInicio(Request $request)
     {
         try {
+            $perPage = $request->get('per_page', 10);
+
             $lista_pessoas = DB::table('tab_pessoas as tp')
             ->select('tp.nr_sequencial', 'tp.nome_pessoa', 'tp.sexo_pessoa', 'tp.dt_nascimento', 'tp.entrou_em', 'tpm.dt_batismo', 
             'tp2.nome_pessoa as nome_lider', 'tpm.tp_participacao')
             ->leftJoin('tab_pessoa_ministerio as tpm', 'tp.nr_sequencial', '=', 'tpm.nr_seq_pessoa')
             ->leftJoin('tab_pessoas as tp2', 'tp2.nr_sequencial', '=', 'tpm.nr_seq_lider')
             ->distinct()
-            ->orderBy('tp.nome_pessoa', 'ASC');
+            ->orderBy('tp.nome_pessoa', 'ASC')
+            ->paginate($perPage);
             
-            $lista_pessoas = $lista_pessoas->paginate($request->get('per_page'));
+            // $lista_pessoas = $lista_pessoas->paginate($request->get('per_page'));
 
             return response()->json($lista_pessoas, 200);
         } catch (Exception $error) {
