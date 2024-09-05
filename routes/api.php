@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Route;
 //     return $request->user();
 // });
 
-Route::get('/teste', function () {
+Route::get('/', function () {
     return 'teste';
 });
 
