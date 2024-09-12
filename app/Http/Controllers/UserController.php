@@ -54,6 +54,7 @@ class UserController extends Controller
 
     public function testeController(Request $request)
     {
-        return response()->json($request, 200);
+        $teste = DB::table('tab_pessoas')->get();
+        return response()->json($teste, 200);
     }
 }
