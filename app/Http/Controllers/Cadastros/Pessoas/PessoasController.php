@@ -12,27 +12,70 @@ class PessoasController extends Controller
     public function createPessoa(Request $request)
     {
         try {
+            $files = $request->file('files');
+            foreach ($files as $file) {
+                $fileName = $file->getClientOriginalName() . strtotime("now") . '.' . $file->extension();
+            }
+            return response()->json($files, 200);
+
             $data = $this->validate($request, [
                 'nome_pessoa' => 'required|string',
                 'sexo_pessoa' => 'required|string',
                 'data_nascimento' => 'required|date',
                 'estado_civil' => 'required|string',
                 'entrou_em' => 'required|date',
-                'id_conjuge' => 'required|integer',
             ]);
 
-            $insert_pessoa = DB::table('tab_pessoas')->insertGetId([
-                'nome_pessoa' => $data['nome_pessoa'],
-                'sexo_pessoa' => $data['sexo_pessoa'],
-                'nr_nivel'    => 1,
-                'id_parent'   => 1,
-                'dt_nascimento' => $data['data_nascimento'],
-                'entrou_em' => $data['entrou_em'],
-                'estado_civil' => $data['estado_civil'],
-                'nr_seq_filial' => 1,
-                'id_conjuge' => $data['id_conjuge'],
-                'user_cadastro' => 1
-            ]);
+            if ($request->id_user) {
+                DB::table('tab_pessoas')
+                    ->where('nr_sequencial', $request->id_user)
+                    ->update([
+                        'nome_pessoa' => $data['nome_pessoa'],
+                        'sexo_pessoa' => $data['sexo_pessoa'],
+                        'nr_nivel'    => 1,
+                        'id_parent'   => 1,
+                        'dt_nascimento' => $data['data_nascimento'],
+                        'entrou_em' => $data['entrou_em'],
+                        'estado_civil' => $data['estado_civil'],
+                        'nr_seq_filial' => 1,
+                        'id_conjuge' => $request->id_conjuge,
+                        'user_cadastro' => 1,
+                        'whatsapp' => $request->whatsapp,
+                        'email' => $request->email,
+                        'bio_pessoa' => $request->bio_pessoa,
+                        'facebook' => $request->facebook,
+                        'instagram' => $request->instagram,
+                    ]);
+
+                $insert_pessoa = $request->id_user;
+            } else {
+                $insert_pessoa = DB::table('tab_pessoas')->insertGetId([
+                    'nome_pessoa' => $data['nome_pessoa'],
+                    'sexo_pessoa' => $data['sexo_pessoa'],
+                    'nr_nivel'    => 1,
+                    'id_parent'   => 1,
+                    'dt_nascimento' => $data['data_nascimento'],
+                    'entrou_em' => $data['entrou_em'],
+                    'estado_civil' => $data['estado_civil'],
+                    'nr_seq_filial' => 1,
+                    'id_conjuge' => $request->id_conjuge,
+                    'user_cadastro' => 1,
+                    'whatsapp' => $request->whatsapp,
+                    'email' => $request->email,
+                    'bio_pessoa' => $request->bio_pessoa,
+                    'facebook' => $request->facebook,
+                    'instagram' => $request->instagram,
+                ]);
+            }
+
+            if ($request->senha) {
+                DB::table('tab_users')->insertGetId([
+                    'username' => $request->email,
+                    'password' => $request->senha,
+                    'nr_seq_pessoa' => $insert_pessoa,
+                    'st_ativo' => 'S'
+                ]);
+            }
 
             return response()->json($insert_pessoa, 200);
         } catch (Exception $error) {
@@ -40,6 +83,26 @@ class PessoasController extends Controller
         }
     }
 
+    public function uploadFiles(Request $request, $id_user)
+    {
+        try {
+            if ($request->hasFile('file')) {
+                $file = $request->file('file');
+                $fileName = $file->getClientOriginalName() . strtotime("now") . '.' . $file->extension();
+                $file->move('files', $fileName);
+
+                $uploadFileUser = DB::table('tab_pessoas')
+                    ->where('nr_sequencial', $id_user)
+                    ->update([
+                        'imagem_perfil' => $fileName
+                    ]);
+
+                return response()->json($uploadFileUser, 200);
+            }
+        } catch (Exception $error) {
+            return response()->json(['error' => $error->getMessage(), 500]);
+        }
+    }
     public function createContato(Request $request)
     {
         try {
@@ -52,8 +115,6 @@ class PessoasController extends Controller
                 'cep' => $request->cep,
                 'numero' => $request->numero,
                 'complemento' => $request->complemento,
-                'whatsapp' => $request->whatsapp,
-                'email' => $request->email,
             ]);
 
             return response()->json($insert_contato, 200);
@@ -68,14 +129,22 @@ class PessoasController extends Controller
             $perPage = $request->get('per_page', 10);
 
             $lista_pessoas = DB::table('tab_pessoas as tp')
-            ->select('tp.nr_sequencial', 'tp.nome_pessoa', 'tp.sexo_pessoa', 'tp.dt_nascimento', 'tp.entrou_em', 'tpm.dt_batismo', 
-            'tp2.nome_pessoa as nome_lider', 'tpm.tp_participacao')
-            ->leftJoin('tab_pessoa_ministerio as tpm', 'tp.nr_sequencial', '=', 'tpm.nr_seq_pessoa')
-            ->leftJoin('tab_pessoas as tp2', 'tp2.nr_sequencial', '=', 'tpm.nr_seq_lider')
-            ->distinct()
-            ->orderBy('tp.nome_pessoa', 'ASC')
-            ->paginate($perPage);
-            
+                ->select(
+                    'tp.nr_sequencial',
+                    'tp.nome_pessoa',
+                    'tp.sexo_pessoa',
+                    'tp.dt_nascimento',
+                    'tp.entrou_em',
+                    'tpm.dt_batismo',
+                    'tp2.nome_pessoa as nome_lider',
+                    'tpm.tp_participacao'
+                )
+                ->leftJoin('tab_pessoa_ministerio as tpm', 'tp.nr_sequencial', '=', 'tpm.nr_seq_pessoa')
+                ->leftJoin('tab_pessoas as tp2', 'tp2.nr_sequencial', '=', 'tpm.nr_seq_lider')
+                ->distinct()
+                ->orderBy('tp.nome_pessoa', 'ASC')
+                ->paginate($perPage);
+
             // $lista_pessoas = $lista_pessoas->paginate($request->get('per_page'));
 
             return response()->json($lista_pessoas, 200);
@@ -184,15 +253,19 @@ class PessoasController extends Controller
                 ->where('nr_seq_pessoa', $id_user)
                 ->first();
 
-            $pessoaMinisterio->nr_seq_lider = DB::table('tab_pessoas')
-                ->select('nr_sequencial', 'nome_pessoa')
-                ->where('nr_sequencial', $pessoaMinisterio->nr_seq_lider)
-                ->first();
+            if (!empty($pessoaMinisterio)) {
+                $pessoaMinisterio->nr_seq_lider = DB::table('tab_pessoas')
+                    ->select('nr_sequencial', 'nome_pessoa')
+                    ->where('nr_sequencial', $pessoaMinisterio->nr_seq_lider)
+                    ->first();
+            }
+            if (!empty($pessoaMinisterio)) {
+                $pessoaMinisterio->convidado_por = DB::table('tab_pessoas')
+                    ->select('nr_sequencial', 'nome_pessoa')
+                    ->where('nr_sequencial', $pessoaMinisterio->convidado_por)
+                    ->first();
+            }
 
-            $pessoaMinisterio->convidado_por = DB::table('tab_pessoas')
-                ->select('nr_sequencial', 'nome_pessoa')
-                ->where('nr_sequencial', $pessoaMinisterio->convidado_por)
-                ->first();
 
             $pessoaSaude = DB::table('tab_pessoa_saude')
                 ->where('nr_seq_pessoa', $id_user)

@@ -1,8 +1,7 @@
 <?php
 
 use App\Http\Controllers\Cadastros\Pessoas\PessoasController;
-
-
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -23,14 +22,18 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return 'teste';
 });
+Route::post('user/authenticate', [UserController::class, 'authenticate']);
+Route::post('/cadastros/registrarNovoUsuario', [PessoasController::class, 'createPessoa']);
 
-Route::post('/cadastros/createPessoa', [PessoasController::class, 'createPessoa']);
-Route::post('/cadastros/createContato', [PessoasController::class, 'createContato']);
-Route::post('/cadastros/createMinisterio', [PessoasController::class, 'createMinisterio']);
-Route::post('/cadastros/createSaude', [PessoasController::class, 'createSaude']);
-Route::post('/cadastros/createDocumentos', [PessoasController::class, 'createDocumentos']);
-Route::post('/cadastros/createProfissao', [PessoasController::class, 'createProfissao']);
-Route::get('/cadastros/getUserEdit/{id_user}', [PessoasController::class, 'getUserEdit']);
-Route::get('/cadastros/getListaPessoa/{desc_pessoa}', [PessoasController::class, 'getListaPessoa']);
-Route::get('/cadastros/getListaPessoasInicio', [PessoasController::class, 'getListaPessoasInicio']);
-
+Route::group(['middleware' => 'jwt'], function () {
+    Route::post('/cadastros/createPessoa', [PessoasController::class, 'createPessoa']);
+    Route::post('/cadastros/createContato', [PessoasController::class, 'createContato']);
+    Route::post('/cadastros/createMinisterio', [PessoasController::class, 'createMinisterio']);
+    Route::post('/cadastros/createSaude', [PessoasController::class, 'createSaude']);
+    Route::post('/cadastros/createDocumentos', [PessoasController::class, 'createDocumentos']);
+    Route::post('/cadastros/createProfissao', [PessoasController::class, 'createProfissao']);
+    Route::get('/cadastros/getUserEdit/{id_user}', [PessoasController::class, 'getUserEdit']);
+    Route::get('/cadastros/getListaPessoa/{desc_pessoa}', [PessoasController::class, 'getListaPessoa']);
+    Route::get('/cadastros/getListaPessoasInicio', [PessoasController::class, 'getListaPessoasInicio']);
+    Route::post('/cadastros/uploadFileUser/{id_user}', [PessoasController::class, 'uploadFiles']);
+});
