@@ -23,6 +23,7 @@ Route::get('/', function () {
     return 'teste';
 });
 Route::post('user/authenticate', [UserController::class, 'authenticate']);
+Route::post('/user/testeController', [UserController::class, 'testeController']);
 Route::post('/cadastros/registrarNovoUsuario', [PessoasController::class, 'createPessoa']);
 
 Route::group(['middleware' => 'jwt'], function () {

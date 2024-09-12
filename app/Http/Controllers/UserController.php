@@ -51,4 +51,9 @@ class UserController extends Controller
             return response()->json($error->getMessage(), 400);
         }
     }
+
+    public function testeController(Request $request)
+    {
+        return response()->json($request, 200);
+    }
 }
