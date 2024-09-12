@@ -12,12 +12,6 @@ class PessoasController extends Controller
     public function createPessoa(Request $request)
     {
         try {
-            $files = $request->file('files');
-            foreach ($files as $file) {
-                $fileName = $file->getClientOriginalName() . strtotime("now") . '.' . $file->extension();
-            }
-            return response()->json($files, 200);
-
             $data = $this->validate($request, [
                 'nome_pessoa' => 'required|string',
                 'sexo_pessoa' => 'required|string',
