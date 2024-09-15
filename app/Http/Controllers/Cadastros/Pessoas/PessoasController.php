@@ -39,6 +39,8 @@ class PessoasController extends Controller
                         'bio_pessoa' => $request->bio_pessoa,
                         'facebook' => $request->facebook,
                         'instagram' => $request->instagram,
+                        'nr_seq_funcao' => 2,
+                        'st_ativo' => true
                     ]);
 
                 $insert_pessoa = $request->id_user;
@@ -100,16 +102,35 @@ class PessoasController extends Controller
     public function createContato(Request $request)
     {
         try {
-            $insert_contato = DB::table('tab_pessoa_contato')->insertGetId([
-                'nr_seq_pessoa' => $request->id_user,
-                'endereco' => $request->endereco,
-                'cidade' => $request->cidade,
-                'uf' => $request->uf,
-                'bairro' => $request->bairro,
-                'cep' => $request->cep,
-                'numero' => $request->numero,
-                'complemento' => $request->complemento,
-            ]);
+
+            $nr_sequencial = DB::table('tab_pessoa_contato')
+                ->where('nr_seq_pessoa', $request->id_user)
+                ->first();
+
+            if (!empty($nr_sequencial)) {
+                $insert_contato = DB::table('tab_pessoa_contato')
+                    ->where('nr_seq_pessoa', $request->id_user)
+                    ->update([
+                        'endereco' => $request->endereco,
+                        'cidade' => $request->cidade,
+                        'uf' => $request->uf,
+                        'bairro' => $request->bairro,
+                        'cep' => $request->cep,
+                        'numero' => $request->numero,
+                        'complemento' => $request->complemento,
+                    ]);
+            } else {
+                $insert_contato = DB::table('tab_pessoa_contato')->insertGetId([
+                    'nr_seq_pessoa' => $request->id_user,
+                    'endereco' => $request->endereco,
+                    'cidade' => $request->cidade,
+                    'uf' => $request->uf,
+                    'bairro' => $request->bairro,
+                    'cep' => $request->cep,
+                    'numero' => $request->numero,
+                    'complemento' => $request->complemento,
+                ]);
+            }
 
             return response()->json($insert_contato, 200);
         } catch (Exception $error) {
@@ -137,6 +158,7 @@ class PessoasController extends Controller
                 ->leftJoin('tab_pessoas as tp2', 'tp2.nr_sequencial', '=', 'tpm.nr_seq_lider')
                 ->distinct()
                 ->orderBy('tp.nome_pessoa', 'ASC')
+                ->where('tp.st_ativo', 'true')
                 ->paginate($perPage);
 
             // $lista_pessoas = $lista_pessoas->paginate($request->get('per_page'));
@@ -150,17 +172,36 @@ class PessoasController extends Controller
     public function createMinisterio(Request $request)
     {
         try {
-            $insert_ministerio = DB::table('tab_pessoa_ministerio')->insertGetId([
-                'nr_seq_pessoa' => $request->id_user,
-                'membro_novo' => $request->membro_novo,
-                'convidado_por' => $request->convidado_por,
-                'membro_batizado' => $request->membro_batizado,
-                'dt_batismo' => $request->dt_batismo,
-                'tp_participacao' => $request->tp_participacao,
-                'participacao_desde' => $request->participacao_desde,
-                'possui_lider' => $request->possui_lider,
-                'nr_seq_lider' => $request->nr_seq_lider,
-            ]);
+            $nr_sequencial = DB::table('tab_pessoa_ministerio')
+                ->where('nr_seq_pessoa', $request->id_user)
+                ->first();
+
+            if (!empty($nr_sequencial)) {
+                $insert_ministerio = DB::table('tab_pessoa_ministerio')
+                    ->where('nr_seq_pessoa', $request->id_user)
+                    ->update([
+                        'membro_novo' => $request->membro_novo,
+                        'convidado_por' => $request->convidado_por,
+                        'membro_batizado' => $request->membro_batizado,
+                        'dt_batismo' => $request->dt_batismo,
+                        'tp_participacao' => $request->tp_participacao,
+                        'participacao_desde' => $request->participacao_desde,
+                        'possui_lider' => $request->possui_lider,
+                        'nr_seq_lider' => $request->nr_seq_lider,
+                    ]);
+            } else {
+                $insert_ministerio = DB::table('tab_pessoa_ministerio')->insertGetId([
+                    'nr_seq_pessoa' => $request->id_user,
+                    'membro_novo' => $request->membro_novo,
+                    'convidado_por' => $request->convidado_por,
+                    'membro_batizado' => $request->membro_batizado,
+                    'dt_batismo' => $request->dt_batismo,
+                    'tp_participacao' => $request->tp_participacao,
+                    'participacao_desde' => $request->participacao_desde,
+                    'possui_lider' => $request->possui_lider,
+                    'nr_seq_lider' => $request->nr_seq_lider,
+                ]);
+            }
 
             return response()->json($insert_ministerio, 200);
         } catch (Exception $error) {
@@ -171,11 +212,24 @@ class PessoasController extends Controller
     public function createSaude(Request $request)
     {
         try {
-            $insert_contato = DB::table('tab_pessoa_saude')->insertGetId([
-                'nr_seq_pessoa' => $request->id_user,
-                'tp_sangue' => $request->tp_sangue,
-                'tp_doador' => $request->tp_doador,
-            ]);
+            $nr_sequencial = DB::table('tab_pessoa_saude')
+                ->where('nr_seq_pessoa', $request->id_user)
+                ->first();
+
+            if (!empty($nr_sequencial)) {
+                $insert_contato = DB::table('tab_pessoa_saude')
+                    ->where('nr_seq_pessoa', $request->id_user)
+                    ->update([
+                        'tp_sangue' => $request->tp_sangue,
+                        'tp_doador' => $request->tp_doador,
+                    ]);
+            } else {
+                $insert_contato = DB::table('tab_pessoa_saude')->insertGetId([
+                    'nr_seq_pessoa' => $request->id_user,
+                    'tp_sangue' => $request->tp_sangue,
+                    'tp_doador' => $request->tp_doador,
+                ]);
+            }
 
             return response()->json($insert_contato, 200);
         } catch (Exception $error) {
@@ -186,11 +240,25 @@ class PessoasController extends Controller
     public function createDocumentos(Request $request)
     {
         try {
-            $insert_contato = DB::table('tab_pessoa_documento')->insertGetId([
-                'nr_seq_pessoa' => $request->id_user,
-                'cpf' => $request->cpf,
-                'rg' => $request->rg,
-            ]);
+
+            $nr_sequencial = DB::table('tab_pessoa_documento')
+                ->where('nr_seq_pessoa', $request->id_user)
+                ->first();
+
+            if (!empty($nr_sequencial)) {
+                $insert_contato = DB::table('tab_pessoa_documento')
+                    ->where('nr_seq_pessoa', $request->id_user)
+                    ->update([
+                        'cpf' => $request->cpf,
+                        'rg' => $request->rg,
+                    ]);
+            } else {
+                $insert_contato = DB::table('tab_pessoa_documento')->insertGetId([
+                    'nr_seq_pessoa' => $request->id_user,
+                    'cpf' => $request->cpf,
+                    'rg' => $request->rg,
+                ]);
+            }
 
             return response()->json($insert_contato, 200);
         } catch (Exception $error) {
@@ -201,12 +269,40 @@ class PessoasController extends Controller
     public function createProfissao(Request $request)
     {
         try {
-            $insert_contato = DB::table('tab_pessoa_profissao')->insertGetId([
-                'nr_seq_pessoa' => $request->id_user,
-                'ds_profissao' => $request->ds_profissao,
-            ]);
+            $nr_sequencial = DB::table('tab_pessoa_profissao')
+                ->where('nr_seq_pessoa', $request->id_user)
+                ->first();
+
+            if (!empty($nr_sequencial)) {
+                $insert_contato = DB::table('tab_pessoa_profissao')
+                    ->where('nr_seq_pessoa', $request->id_user)
+                    ->update([
+                        'ds_profissao' => $request->ds_profissao,
+                    ]);
+            } else {
+                $insert_contato = DB::table('tab_pessoa_profissao')->insertGetId([
+                    'nr_seq_pessoa' => $request->id_user,
+                    'ds_profissao' => $request->ds_profissao,
+                ]);
+            }
 
             return response()->json($insert_contato, 200);
+        } catch (Exception $error) {
+            return response()->json($error->getMessage(), 400);
+        }
+    }
+
+    public function inativarCadastro(Request $request)
+    {
+        try {
+
+            $inativar_cadastro = DB::table('tab_pessoas')
+            ->where('nr_sequencial', $request->nr_sequencial)
+            ->update([
+                'st_ativo' => 'false'    
+            ]);
+
+            return response()->json($inativar_cadastro, 200);
         } catch (Exception $error) {
             return response()->json($error->getMessage(), 400);
         }
@@ -218,6 +314,7 @@ class PessoasController extends Controller
             $lista_pessoa = DB::table('tab_pessoas')
                 ->select('nr_sequencial', 'nome_pessoa')
                 ->where('nome_pessoa', 'like', "%{$desc_pessoa}%")
+                ->where('st_ativo', 'true')
                 ->limit(100)
                 ->get();
 

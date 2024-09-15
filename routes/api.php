@@ -36,5 +36,6 @@ Route::group(['middleware' => 'jwt'], function () {
     Route::get('/cadastros/getUserEdit/{id_user}', [PessoasController::class, 'getUserEdit']);
     Route::get('/cadastros/getListaPessoa/{desc_pessoa}', [PessoasController::class, 'getListaPessoa']);
     Route::get('/cadastros/getListaPessoasInicio', [PessoasController::class, 'getListaPessoasInicio']);
+    Route::post('/cadastros/inativarCadastro', [PessoasController::class, 'inativarCadastro']);
     Route::post('/cadastros/uploadFileUser/{id_user}', [PessoasController::class, 'uploadFiles']);
 });

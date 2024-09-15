@@ -31,6 +31,7 @@ class UserController extends Controller
                 ->join('tab_pessoas as tp', 'tu.nr_seq_pessoa', '=', 'tp.nr_sequencial')
                 ->Leftjoin('tab_pessoa_ministerio as tm', 'tp.nr_sequencial', '=', 'tm.nr_seq_pessoa')
                 ->Leftjoin('tab_pessoa_contato as tc', 'tp.nr_sequencial', '=', 'tc.nr_seq_pessoa')
+                ->Leftjoin('tab_funcoes as tf', 'tp.nr_seq_funcao', '=', 'tf.nr_sequencial')
                 ->where('username', $request->username)
                 ->where('password', $request->password)
                 ->whereNotNull('st_ativo')
