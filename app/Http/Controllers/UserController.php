@@ -34,7 +34,7 @@ class UserController extends Controller
                 ->Leftjoin('tab_funcoes as tf', 'tp.nr_seq_funcao', '=', 'tf.nr_sequencial')
                 ->where('username', $request->username)
                 ->where('password', $request->password)
-                ->whereNotNull('tf.st_ativo')
+                ->whereNotNull('tp.st_ativo')
                 ->first();
 
 
