@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Cadastros\Grupos\GruposController;
 use App\Http\Controllers\Cadastros\Pessoas\PessoasController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -38,4 +39,9 @@ Route::group(['middleware' => 'jwt'], function () {
     Route::get('/cadastros/getListaPessoasInicio', [PessoasController::class, 'getListaPessoasInicio']);
     Route::post('/cadastros/inativarCadastro', [PessoasController::class, 'inativarCadastro']);
     Route::post('/cadastros/uploadFileUser/{id_user}', [PessoasController::class, 'uploadFiles']);
+
+    Route::post('/cadastros/createGrupo', [GruposController::class, 'createGrupo']);
+
+    Route::post('/cadastros/grupos/createContato', [GruposController::class, 'createContato']);
+    Route::get('/cadastros/grupos/getGrupoId/{id_grupo}', [GruposController::class, 'getGrupoId']);
 });
