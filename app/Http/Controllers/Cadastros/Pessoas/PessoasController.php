@@ -354,7 +354,7 @@ class PessoasController extends Controller
             $lista_pessoa = DB::table('tab_pessoas')
                 ->select('nr_sequencial', 'nome_pessoa')
                 ->where('nome_pessoa', 'like', "%{$desc_pessoa}%")
-                ->where('st_ativo', 'true')
+                ->where('st_ativo', 1)
                 ->limit(100)
                 ->get();
 
