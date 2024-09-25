@@ -40,7 +40,7 @@ class PessoasController extends Controller
                         'facebook' => $request->facebook,
                         'instagram' => $request->instagram,
                         'nr_seq_funcao' => 2,
-                        'st_ativo' => 'true'
+                        'st_ativo' => 1
                     ]);
 
                 $insert_pessoa = $request->id_user;
@@ -167,7 +167,7 @@ class PessoasController extends Controller
                 ->leftJoin('tab_pessoas as tp2', 'tp2.nr_sequencial', '=', 'tpm.nr_seq_lider')
                 ->distinct()
                 ->orderBy('tp.nome_pessoa', 'ASC')
-                ->where('tp.st_ativo', 'true')
+                ->where('tp.st_ativo', 1)
                 ->paginate($perPage);
 
             // $lista_pessoas = $lista_pessoas->paginate($request->get('per_page'));
