@@ -36,27 +36,27 @@ class GruposController extends Controller
                         'nr_seq_filial' => 1,
                     ]);
 
-                    $update_membro_lider = DB::table('tab_grupo_membros')
+                $update_membro_lider = DB::table('tab_grupo_membros')
                     ->where('nr_seq_grupo', $request->id_grupo)
                     ->where('nr_seq_tipo_membro', 1)
                     ->update([
                         'nr_seq_pessoa' => $data['nr_seq_lider'],
                     ]);
 
-                    $update_membro_vice_lider = DB::table('tab_grupo_membros')
+                $update_membro_vice_lider = DB::table('tab_grupo_membros')
                     ->where('nr_seq_grupo', $request->id_grupo)
                     ->where('nr_seq_tipo_membro', 2)
                     ->update([
                         'nr_seq_pessoa' => $data['nr_seq_vice_lider'],
                     ]);
 
-                    $update_membro_anfitriao = DB::table('tab_grupo_membros')
+                $update_membro_anfitriao = DB::table('tab_grupo_membros')
                     ->where('nr_seq_grupo', $request->id_grupo)
                     ->where('nr_seq_tipo_membro', 3)
                     ->update([
                         'nr_seq_pessoa' => $data['nr_seq_anfitriao'],
                     ]);
-                    
+
                 $insert_grupo = $request->id_grupo;
             } else {
                 $insert_grupo = DB::table('tab_grupos')->insertGetId([
@@ -155,6 +155,55 @@ class GruposController extends Controller
         }
     }
 
+    public function inserirMembroCelula(Request $request)
+    {
+        try {
+            $nr_sequencial = DB::table('tab_grupo_membros')
+                ->where('nr_seq_pessoa', $request->id_user)
+                ->first();
+
+            if (!empty($nr_sequencial)) {
+                return response()->json('Usuário já pertence a uma céluula', 400);
+            } else {
+                $insert_membro_celula = DB::table('tab_grupo_membros')->insertGetId([
+                    'nr_seq_grupo' => $request->id_grupo,
+                    'nr_seq_pessoa' => $request->id_user,
+                    'nr_seq_tp_membro' => 4,
+                ]);
+
+                $membros = DB::table('tab_grupo_membros as gm')
+                    ->where('gm.nr_seq_grupo', $request->id_grupo)
+                    ->join('tab_pessoas as tp', 'gm.nr_seq_pessoa', '=', 'tp.nr_sequencial')
+                    ->join('tp_membro as tm', 'gm.nr_seq_tp_membro', '=', 'tm.nr_sequencial')
+                    ->get();
+            }
+
+            return response()->json($membros, 200);
+        } catch (Exception $error) {
+            return response()->json($error->getMessage(), 400);
+        }
+    }
+
+    public function deleteMembroCelula(Request $request)
+    {
+        try {
+            $nr_sequencial = DB::table('tab_grupo_membros')
+                ->where('nr_seq_pessoa', $request->id_user)
+                ->where('nr_seq_grupo', $request->id_grupo)
+                ->delete();
+
+            $membros = DB::table('tab_grupo_membros as gm')
+                ->where('gm.nr_seq_grupo', $request->id_grupo)
+                ->join('tab_pessoas as tp', 'gm.nr_seq_pessoa', '=', 'tp.nr_sequencial')
+                ->join('tp_membro as tm', 'gm.nr_seq_tp_membro', '=', 'tm.nr_sequencial')
+                ->get();
+
+            return response()->json($membros, 200);
+        } catch (Exception $error) {
+            return response()->json($error->getMessage(), 400);
+        }
+    }
+
     public function getListaPessoasInicio(Request $request)
     {
         try {
@@ -191,10 +240,10 @@ class GruposController extends Controller
         try {
 
             $inativar_cadastro = DB::table('tab_pessoas')
-            ->where('nr_sequencial', $request->nr_sequencial)
-            ->update([
-                'st_ativo' => 'false'    
-            ]);
+                ->where('nr_sequencial', $request->nr_sequencial)
+                ->update([
+                    'st_ativo' => 'false'
+                ]);
 
             return response()->json($inativar_cadastro, 200);
         } catch (Exception $error) {
@@ -244,23 +293,54 @@ class GruposController extends Controller
                     ->first();
             }
 
-            $grupo->dias_semana = json_decode( $grupo->dias_semana, true);
+            $grupo->dias_semana = json_decode($grupo->dias_semana, true);
 
             $contato = DB::table('tab_grupos_contato')
-            ->where('nr_seq_grupo', $id_grupo)
-            ->first();
+                ->where('nr_seq_grupo', $id_grupo)
+                ->first();
 
             $membros = DB::table('tab_grupo_membros as gm')
-            ->where('gm.nr_seq_grupo', $id_grupo)
-            ->join('tab_pessoas as tp', 'gm.nr_seq_pessoa', '=', 'tp.nr_sequencial')
-            ->join('tp_membro as tm', 'gm.nr_seq_tp_membro', '=', 'tm.nr_sequencial')
-            ->get();
+                ->where('gm.nr_seq_grupo', $id_grupo)
+                ->join('tab_pessoas as tp', 'gm.nr_seq_pessoa', '=', 'tp.nr_sequencial')
+                ->join('tp_membro as tm', 'gm.nr_seq_tp_membro', '=', 'tm.nr_sequencial')
+                ->get();
 
             return response()->json([
                 'grupo' => $grupo,
                 'contato' => $contato,
                 'membros' => $membros
             ], 200);
+        } catch (Exception $error) {
+            return response()->json($error->getMessage(), 400);
+        }
+    }
+
+    public function getListaGruposInicio(Request $request)
+    {
+        try {
+            $perPage = $request->get('per_page', 10);
+
+            $lista_pessoas = DB::table('tab_grupos as tg')
+                ->select(
+                    'tg.nr_sequencial',
+                    'tp1.nome_pessoa as nome_lider',
+                    'tg.dias_semana',
+                    'tg.horario',
+                    DB::raw('COUNT(tgm.nr_seq_grupo) as total_membros'),
+                    'tg.sexo_participantes',
+                    'tgc.bairro'
+                )
+                ->leftJoin('tab_pessoas as tp1', 'tg.nr_seq_lider', '=', 'tp1.nr_sequencial')
+                ->leftJoin('tab_grupo_membros as tgm', 'tg.nr_sequencial', '=', 'tgm.nr_seq_grupo')
+                ->leftJoin('tab_grupos_contato as tgc', 'tg.nr_sequencial', '=', 'tgc.nr_seq_grupo')
+                ->distinct()
+                ->groupBy('tg.nr_sequencial', 'tp1.nome_pessoa', 'tg.dias_semana', 'tg.horario', 'tg.sexo_participantes', 'tgc.bairro') 
+                ->orderBy('tg.nr_sequencial', 'ASC')
+                ->paginate($perPage);
+
+            // $lista_pessoas = $lista_pessoas->paginate($request->get('per_page'));
+
+            return response()->json($lista_pessoas, 200);
         } catch (Exception $error) {
             return response()->json($error->getMessage(), 400);
         }

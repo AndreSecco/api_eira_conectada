@@ -65,12 +65,21 @@ class PessoasController extends Controller
             }
 
             if ($request->senha) {
-                DB::table('tab_users')->insertGetId([
-                    'username' => $request->email,
-                    'password' => $request->senha,
-                    'nr_seq_pessoa' => $insert_pessoa,
-                    'st_ativo' => 'S'
-                ]);
+                $sql_email_existe = DB::table('tab_users')
+                ->where('username', $request->email)
+                ->first();
+
+                if(!empty($sql_email_existe)){
+                    return response()->json('Email já cadastrado no sistema', 400);
+                }
+
+                return response()->json($sql_email_existe, 200);
+                // DB::table('tab_users')->insertGetId([
+                //     'username' => $request->email,
+                //     'password' => $request->senha,
+                //     'nr_seq_pessoa' => $insert_pessoa,
+                //     'st_ativo' => 'S'
+                // ]);
             }
 
             return response()->json($insert_pessoa, 200);
@@ -237,6 +246,37 @@ class PessoasController extends Controller
         }
     }
 
+    public function createSociais(Request $request)
+    {
+        try {
+            $nr_sequencial = DB::table('tab_sociais')
+                ->where('nr_seq_pessoa', $request->id_user)
+                ->first();
+
+            if (!empty($nr_sequencial)) {
+                $insert_sociais = DB::table('tab_sociais')
+                    ->where('nr_seq_pessoa', $request->id_user)
+                    ->update([
+                        'bio_pessoa' => $request->bio,
+                        'facebook' => $request->facebook,
+                        'instagram' => $request->instagram,
+                    ]);
+            } else {
+                $insert_sociais = DB::table('tab_sociais')->insertGetId([
+                    'nr_seq_pessoa' => $request->id_user,
+                    'bio_pessoa' => $request->bio,
+                    'facebook' => $request->facebook,
+                    'facebook' => $request->facebook,
+                    'instagram' => $request->instagram,
+                ]);
+            }
+
+            return response()->json($insert_sociais, 200);
+        } catch (Exception $error) {
+            return response()->json($error->getMessage(), 400);
+        }
+    }
+
     public function createDocumentos(Request $request)
     {
         try {
@@ -370,13 +410,18 @@ class PessoasController extends Controller
                 ->where('nr_seq_pessoa', $id_user)
                 ->first();
 
+            $pessoaSociais = DB::table('tab_sociais')
+            ->where('nr_seq_pessoa', $id_user)
+            ->first();
+
             return response()->json([
                 'pessoaProfile' => $pessoaProfile,
                 'pessoaContato' => $pessoaContato,
                 'pessoaMinisterio' => $pessoaMinisterio,
                 'pessoaSaude' => $pessoaSaude,
                 'pessoaDocumentos' => $pessoaDocumentos,
-                'pessoaProfissao' => $pessoaProfissao
+                'pessoaProfissao' => $pessoaProfissao,
+                'pessoaSociais' => $pessoaSociais,
             ], 200);
         } catch (Exception $error) {
             return response()->json($error->getMessage(), 400);

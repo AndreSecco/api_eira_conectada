@@ -32,6 +32,7 @@ Route::group(['middleware' => 'jwt'], function () {
     Route::post('/cadastros/createContato', [PessoasController::class, 'createContato']);
     Route::post('/cadastros/createMinisterio', [PessoasController::class, 'createMinisterio']);
     Route::post('/cadastros/createSaude', [PessoasController::class, 'createSaude']);
+    Route::post('/cadastros/createSociais', [PessoasController::class, 'createSociais']);
     Route::post('/cadastros/createDocumentos', [PessoasController::class, 'createDocumentos']);
     Route::post('/cadastros/createProfissao', [PessoasController::class, 'createProfissao']);
     Route::get('/cadastros/getUserEdit/{id_user}', [PessoasController::class, 'getUserEdit']);
@@ -39,9 +40,13 @@ Route::group(['middleware' => 'jwt'], function () {
     Route::get('/cadastros/getListaPessoasInicio', [PessoasController::class, 'getListaPessoasInicio']);
     Route::post('/cadastros/inativarCadastro', [PessoasController::class, 'inativarCadastro']);
     Route::post('/cadastros/uploadFileUser/{id_user}', [PessoasController::class, 'uploadFiles']);
-
+    
     Route::post('/cadastros/createGrupo', [GruposController::class, 'createGrupo']);
+    
 
+    Route::get('/cadastros/getListaGruposInicio', [GruposController::class, 'getListaGruposInicio']);
     Route::post('/cadastros/grupos/createContato', [GruposController::class, 'createContato']);
     Route::get('/cadastros/grupos/getGrupoId/{id_grupo}', [GruposController::class, 'getGrupoId']);
+    Route::post('/inserirMembroCelula', [GruposController::class, 'inserirMembroCelula']);
+    Route::post('/deleteMembroCelula', [GruposController::class, 'deleteMembroCelula']);
 });
