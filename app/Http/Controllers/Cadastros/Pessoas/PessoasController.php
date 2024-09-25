@@ -40,7 +40,7 @@ class PessoasController extends Controller
                         'facebook' => $request->facebook,
                         'instagram' => $request->instagram,
                         'nr_seq_funcao' => 2,
-                        'st_ativo' => true
+                        'st_ativo' => 'true'
                     ]);
 
                 $insert_pessoa = $request->id_user;
