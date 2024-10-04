@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Pagination\LengthAwarePaginator;
+
 
 class PessoasController extends Controller
 {
@@ -26,8 +28,6 @@ class PessoasController extends Controller
                     ->update([
                         'nome_pessoa' => $data['nome_pessoa'],
                         'sexo_pessoa' => $data['sexo_pessoa'],
-                        'nr_nivel'    => 1,
-                        'id_parent'   => 1,
                         'dt_nascimento' => $data['data_nascimento'],
                         'entrou_em' => $data['entrou_em'],
                         'estado_civil' => $data['estado_civil'],
@@ -66,10 +66,10 @@ class PessoasController extends Controller
 
             if ($request->senha) {
                 $sql_email_existe = DB::table('tab_users')
-                ->where('username', $request->email)
-                ->first();
+                    ->where('username', $request->email)
+                    ->first();
 
-                if(!empty($sql_email_existe)){
+                if (!empty($sql_email_existe)) {
                     return response()->json('Email já cadastrado no sistema', 400);
                 }
 
@@ -152,27 +152,83 @@ class PessoasController extends Controller
         try {
             $perPage = $request->get('per_page', 10);
 
-            $lista_pessoas = DB::table('tab_pessoas as tp')
-                ->select(
-                    'tp.nr_sequencial',
-                    'tp.nome_pessoa',
-                    'tp.sexo_pessoa',
-                    'tp.dt_nascimento',
-                    'tp.entrou_em',
-                    'tpm.dt_batismo',
-                    'tp2.nome_pessoa as nome_lider',
-                    'tpm.tp_participacao'
+            // $lista_pessoas = DB::table('tab_pessoas as tp')
+            //     ->select(
+            //         'tp.nr_sequencial',
+            //         'tp.nome_pessoa',
+            //         'tp.sexo_pessoa',
+            //         'tp.dt_nascimento',
+            //         'tp.entrou_em',
+            //         'tpm.dt_batismo',
+            //         'tp2.nome_pessoa as nome_lider',
+            //         'tpm.tp_participacao'
+            //     )
+            //     ->leftJoin('tab_pessoa_ministerio as tpm', 'tp.nr_sequencial', '=', 'tpm.nr_seq_pessoa')
+            //     ->leftJoin('tab_pessoas as tp2', 'tp2.nr_sequencial', '=', 'tpm.nr_seq_lider')
+            //     ->distinct()
+            //     ->orderBy('tp.nome_pessoa', 'ASC')
+            //     ->where('tp.st_ativo', 'true')
+            //     ->paginate($perPage);
+            $codigoUsuario = $request->auth->nr_sequencial; // Código da pessoa logada
+            $nrNivelUsuario = $request->auth->nr_nivel; // Código da pessoa logada
+            // return response()->json($nrNivelUsuario);
+            $lista_pessoas = DB::select(
+                DB::raw("
+                WITH RECURSIVE relacionados AS (
+                    -- Primeiro nível, o usuário logado
+                    SELECT tp.nr_sequencial, tp.id_parent, tp.nr_nivel
+                    FROM tab_pessoas tp
+                    WHERE tp.nr_sequencial = :codigoUsuario1
+        
+                    UNION ALL
+        
+                    -- Recursivamente, pega os descendentes
+                    SELECT tp.nr_sequencial, tp.id_parent, tp.nr_nivel
+                    FROM tab_pessoas tp
+                    INNER JOIN relacionados r ON r.nr_sequencial = tp.id_parent
                 )
-                ->leftJoin('tab_pessoa_ministerio as tpm', 'tp.nr_sequencial', '=', 'tpm.nr_seq_pessoa')
-                ->leftJoin('tab_pessoas as tp2', 'tp2.nr_sequencial', '=', 'tpm.nr_seq_lider')
-                ->distinct()
-                ->orderBy('tp.nome_pessoa', 'ASC')
-                ->where('tp.st_ativo', 1)
-                ->paginate($perPage);
+                SELECT 
+                    tp.nr_sequencial,
+                    tp.nome_pessoa,
+                    tp.sexo_pessoa,
+                    tp.dt_nascimento,
+                    tp.nr_nivel,
+                    tp.entrou_em,
+                    tpm.dt_batismo,
+                    tp2.nome_pessoa as nome_lider,
+                    tpm.tp_participacao
+                FROM tab_pessoas tp
+                LEFT JOIN tab_pessoa_ministerio tpm ON tp.nr_sequencial = tpm.nr_seq_pessoa
+                LEFT JOIN tab_pessoas tp2 ON tp2.nr_sequencial = tpm.nr_seq_lider
+                WHERE tp.st_ativo = 'true'
+                AND (
+                    tp.nr_nivel > :nrNivelUsuario
+                    OR tp.nr_sequencial = :codigoUsuario2
+                )
+                AND tp.nr_sequencial IN (
+                    SELECT nr_sequencial FROM relacionados
+                )
+                ORDER BY tp.nome_pessoa ASC
+            "),
+                [
+                    'codigoUsuario1' => $codigoUsuario,
+                    'codigoUsuario2' => $codigoUsuario,
+                    'nrNivelUsuario' => $nrNivelUsuario
+                ]
+            );
 
-            // $lista_pessoas = $lista_pessoas->paginate($request->get('per_page'));
+            // Se precisar paginar os resultados, você pode fazer manualmente:
+            $currentPage = LengthAwarePaginator::resolveCurrentPage();
+            $collection = collect($lista_pessoas);
+            $paginatedResults = new LengthAwarePaginator(
+                $collection->forPage($currentPage, $perPage),
+                $collection->count(),
+                $perPage,
+                $currentPage,
+                ['path' => LengthAwarePaginator::resolveCurrentPath()]
+            );
 
-            return response()->json($lista_pessoas, 200);
+            return response()->json($paginatedResults, 200);
         } catch (Exception $error) {
             return response()->json($error->getMessage(), 400);
         }
@@ -337,10 +393,10 @@ class PessoasController extends Controller
         try {
 
             $inativar_cadastro = DB::table('tab_pessoas')
-            ->where('nr_sequencial', $request->nr_sequencial)
-            ->update([
-                'st_ativo' => 'false'    
-            ]);
+                ->where('nr_sequencial', $request->nr_sequencial)
+                ->update([
+                    'st_ativo' => 'false'
+                ]);
 
             return response()->json($inativar_cadastro, 200);
         } catch (Exception $error) {
@@ -354,7 +410,7 @@ class PessoasController extends Controller
             $lista_pessoa = DB::table('tab_pessoas')
                 ->select('nr_sequencial', 'nome_pessoa')
                 ->where('nome_pessoa', 'like', "%{$desc_pessoa}%")
-                ->where('st_ativo', 1)
+                ->where('st_ativo', 'true')
                 ->limit(100)
                 ->get();
 
@@ -411,8 +467,8 @@ class PessoasController extends Controller
                 ->first();
 
             $pessoaSociais = DB::table('tab_sociais')
-            ->where('nr_seq_pessoa', $id_user)
-            ->first();
+                ->where('nr_seq_pessoa', $id_user)
+                ->first();
 
             return response()->json([
                 'pessoaProfile' => $pessoaProfile,

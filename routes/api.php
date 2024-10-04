@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Cadastros\Grupos\GruposController;
 use App\Http\Controllers\Cadastros\Pessoas\PessoasController;
+use App\Http\Controllers\Celulas\CelulasController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -26,6 +27,9 @@ Route::get('/', function () {
 Route::post('user/authenticate', [UserController::class, 'authenticate']);
 Route::post('/user/testeController', [UserController::class, 'testeController']);
 Route::post('/cadastros/registrarNovoUsuario', [PessoasController::class, 'createPessoa']);
+Route::post('/recuperar-senha', [UserController::class, 'sendEmail']);
+Route::post('/redefinir-senha', [UserController::class, 'redefinirSenha']);
+
 
 Route::group(['middleware' => 'jwt'], function () {
     Route::post('/cadastros/createPessoa', [PessoasController::class, 'createPessoa']);
@@ -49,4 +53,10 @@ Route::group(['middleware' => 'jwt'], function () {
     Route::get('/cadastros/grupos/getGrupoId/{id_grupo}', [GruposController::class, 'getGrupoId']);
     Route::post('/inserirMembroCelula', [GruposController::class, 'inserirMembroCelula']);
     Route::post('/deleteMembroCelula', [GruposController::class, 'deleteMembroCelula']);
+    
+    
+    
+    Route::get('/celulas/getCelulasLider/{id_lider_celula}', [CelulasController::class, 'getCelulasLider']);
+    Route::get('/celulas/buscaMembros/{id_grupo}', [CelulasController::class, 'buscaMembros']);
+    Route::post('/celulas/finalizarCelula', [CelulasController::class, 'finalizarCelula']);
 });

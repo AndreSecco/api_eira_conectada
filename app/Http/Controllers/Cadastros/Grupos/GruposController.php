@@ -319,8 +319,9 @@ class GruposController extends Controller
     {
         try {
             $perPage = $request->get('per_page', 10);
+            $codigoUsuario = $request->auth->nr_sequencial; // Código da pessoa logada
 
-            $lista_pessoas = DB::table('tab_grupos as tg')
+            $lista_grupos =  DB::table('tab_grupos as tg')
                 ->select(
                     'tg.nr_sequencial',
                     'tp1.nome_pessoa as nome_lider',
@@ -328,19 +329,26 @@ class GruposController extends Controller
                     'tg.horario',
                     DB::raw('COUNT(tgm.nr_seq_grupo) as total_membros'),
                     'tg.sexo_participantes',
-                    'tgc.bairro'
+                    'tgc.bairro',
+                    'tg.nr_seq_lider',
+                    'tg.id_parent'
                 )
-                ->leftJoin('tab_pessoas as tp1', 'tg.nr_seq_lider', '=', 'tp1.nr_sequencial')
+                ->leftJoin('tab_pessoas as tp1', 'tg.id_parent', '=', 'tp1.nr_sequencial')
                 ->leftJoin('tab_grupo_membros as tgm', 'tg.nr_sequencial', '=', 'tgm.nr_seq_grupo')
                 ->leftJoin('tab_grupos_contato as tgc', 'tg.nr_sequencial', '=', 'tgc.nr_seq_grupo')
                 ->distinct()
-                ->groupBy('tg.nr_sequencial', 'tp1.nome_pessoa', 'tg.dias_semana', 'tg.horario', 'tg.sexo_participantes', 'tgc.bairro') 
+                ->groupBy('tg.nr_sequencial', 'tp1.nome_pessoa', 'tg.dias_semana', 'tg.horario', 'tg.sexo_participantes', 'tgc.bairro', 'tg.nr_seq_lider', 'tg.id_parent')
+                ->havingRaw('tg.id_parent IN (
+                                SELECT tp.nr_sequencial
+                                FROM tab_pessoas tp
+                                WHERE tp.nr_sequencial = ? OR tp.id_parent = ?
+                            )', [$codigoUsuario, $codigoUsuario]) // Binding para o usuário e seu pai
                 ->orderBy('tg.nr_sequencial', 'ASC')
                 ->paginate($perPage);
 
             // $lista_pessoas = $lista_pessoas->paginate($request->get('per_page'));
 
-            return response()->json($lista_pessoas, 200);
+            return response()->json($lista_grupos, 200);
         } catch (Exception $error) {
             return response()->json($error->getMessage(), 400);
         }

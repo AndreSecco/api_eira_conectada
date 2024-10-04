@@ -21,6 +21,7 @@ class JwtMiddleware
 
         try {
             $decoded = JWT::decode($token, new Key(env('JWT_SECRET'), 'HS256'));
+            // return response()->json(Pessoa::find($decoded->sub));
             $request->merge(['auth' => Pessoa::find($decoded->sub)]);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Token inválido ou expirado'], 401);

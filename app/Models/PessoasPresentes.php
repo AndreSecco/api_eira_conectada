@@ -4,11 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Pessoa extends Model
+class PessoasPresentes extends Model
 {
-    protected $table = 'tab_pessoas';
+    protected $table = 'tab_celula_presentes';
     protected $primaryKey = 'nr_sequencial';
+    
+    public $timestamps = false;
     protected $guarded = []; 
 
-    public $timestamps = false;
 }
