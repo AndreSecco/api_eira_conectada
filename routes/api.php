@@ -3,6 +3,7 @@
 use App\Http\Controllers\Cadastros\Grupos\GruposController;
 use App\Http\Controllers\Cadastros\Pessoas\PessoasController;
 use App\Http\Controllers\Celulas\CelulasController;
+use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -59,4 +60,7 @@ Route::group(['middleware' => 'jwt'], function () {
     Route::get('/celulas/getCelulasLider/{id_lider_celula}', [CelulasController::class, 'getCelulasLider']);
     Route::get('/celulas/buscaMembros/{id_grupo}', [CelulasController::class, 'buscaMembros']);
     Route::post('/celulas/finalizarCelula', [CelulasController::class, 'finalizarCelula']);
+
+
+    Route::get('/dashboard/fetchTextCardsData', [DashboardController::class, 'fetchTextCardsData']);
 });

@@ -40,7 +40,7 @@ class PessoasController extends Controller
                         'facebook' => $request->facebook,
                         'instagram' => $request->instagram,
                         'nr_seq_funcao' => 2,
-                        'st_ativo' => 1
+                        'st_ativo' => 'true'
                     ]);
 
                 $insert_pessoa = $request->id_user;
@@ -61,6 +61,8 @@ class PessoasController extends Controller
                     'bio_pessoa' => $request->bio_pessoa,
                     'facebook' => $request->facebook,
                     'instagram' => $request->instagram,
+                    'nr_seq_funcao' => 2,
+                    'st_ativo' => 'true'
                 ]);
             }
 
@@ -73,13 +75,13 @@ class PessoasController extends Controller
                     return response()->json('Email já cadastrado no sistema', 400);
                 }
 
-                return response()->json($sql_email_existe, 200);
-                // DB::table('tab_users')->insertGetId([
-                //     'username' => $request->email,
-                //     'password' => $request->senha,
-                //     'nr_seq_pessoa' => $insert_pessoa,
-                //     'st_ativo' => 'S'
-                // ]);
+                // return response()->json($sql_email_existe, 200);
+                DB::table('tab_users')->insertGetId([
+                    'username' => $request->email,
+                    'password' => $request->senha,
+                    'nr_seq_pessoa' => $insert_pessoa,
+                    'st_ativo' => 'true'
+                ]);
             }
 
             return response()->json($insert_pessoa, 200);
