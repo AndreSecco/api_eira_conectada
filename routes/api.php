@@ -63,4 +63,10 @@ Route::group(['middleware' => 'jwt'], function () {
 
 
     Route::get('/dashboard/fetchTextCardsData', [DashboardController::class, 'fetchTextCardsData']);
+    Route::get('/dashboard/fetchPresentesCelulas', [DashboardController::class, 'fetchPresentesCelulas']);
+    Route::get('/dashboard/fetchEvolucaoCelula', [DashboardController::class, 'fetchEvolucaoCelula']);
+    Route::get('/dashboard/fetchTotalBatizados', [DashboardController::class, 'fetchTotalBatizados']);
+    Route::get('/dashboard/fetchNaoBatizados', [DashboardController::class, 'fetchNaoBatizados']);
+    Route::get('/dashboard/fetchAniversariantes', [DashboardController::class, 'fetchAniversariantes']);
+    Route::get('/dashboard/fetchLideresMes', [DashboardController::class, 'fetchLideresMes']);
 });
