@@ -33,49 +33,60 @@ class DashboardController extends Controller
     public function fetchPresentesCelulas(Request $request)
     {
         try {
-            $pessoas_vinculadas = DB::select('SELECT COUNT(distinct(tgm.nr_sequencial)) as pessoas_vinculadas
-                                            FROM tab_grupo_membros tgm');
-
-            // $pessoas_presentes = DB::select('SELECT count(distinct(tcp.nr_seq_pessoa)) as pessoas_presentes from tab_celula_presentes tcp 
-            // left join tab_celulas tc on tcp.nr_seq_celula = tc.nr_sequencial 
-            // left join tab_grupos tg on tc.nr_seq_grupo = tg.nr_sequencial');
+            $select_frequencia = DB::select('SELECT g.nome_grupo AS nome_do_grupo,
+                                                    COUNT(DISTINCT gm.nr_seq_pessoa) AS total_cadastrados,
+                                                    COUNT(DISTINCT cp.nr_seq_pessoa) AS total_presentes,
+                                                    (COUNT(DISTINCT gm.nr_seq_pessoa) - COUNT(DISTINCT cp.nr_seq_pessoa)) AS total_faltaram,
+                                                    COUNT(DISTINCT CASE WHEN cp.nr_seq_tp_membro = 6 THEN cp.nr_seq_pessoa END) AS quantidade_convidados,
+                                                    DATE_SUB(DATE(c.data_celula), INTERVAL WEEKDAY(c.data_celula) DAY) AS data_do_primeiro_dia_da_semana
+                                                FROM 
+                                                    tab_grupos g
+                                                JOIN 
+                                                    tab_grupo_membros gm ON gm.nr_seq_grupo = g.nr_sequencial
+                                                LEFT JOIN 
+                                                    tab_celulas c ON c.nr_seq_grupo = g.nr_sequencial
+                                                LEFT JOIN 
+                                                    tab_celula_presentes cp ON cp.nr_seq_celula = c.nr_sequencial
+                                                WHERE 
+                                                    c.data_celula >= DATE_SUB(CURDATE(), INTERVAL 7 WEEK)  -- Últimas 7 semanas
+                                                GROUP BY 
+                                                    g.nome_grupo,
+                                                    c.data_celula,
+                                                    YEARWEEK(c.data_celula, 1)  -- Agrupa por semana, começando na segunda-feira
+                                                ORDER BY 
+                                                    c.data_celula DESC;');
 
             return response()->json([
-                'fetchPessoasVinculadas' => $pessoas_vinculadas,
-                // 'fetchPessoasPresentes' => $pessoas_presentes,
+                'selectFrequencia' => $select_frequencia
             ], 200);
         } catch (Exception $error) {
             return response()->json($error->getMessage(), 400);
         }
     }
 
-    public function fetchEvolucaoCelula(Request $request)
+    public function fetchFaixaEtaria(Request $request)
     {
         try {
 
 
-            $evolucao_celula = DB::select('WITH membros_por_semana AS (
-                SELECT 
-                    WEEK(created_at) AS semana,
-                    COUNT(nr_seq_pessoa) AS total_membros
-                    FROM 
-                        tab_grupo_membros
-                    WHERE 
-                        nr_seq_grupo = 2
-                    GROUP BY 
-                        WEEK(created_at)
-                )
-
-                SELECT 
-                    semana,
-                    SUM(total_membros) OVER (ORDER BY semana) AS total_acumulado
-                FROM 
-                    membros_por_semana
-                ORDER BY 
-                semana;');
+            $faixa_etaria = DB::select("SELECT 
+                                            CASE
+                                                WHEN TIMESTAMPDIFF(YEAR, p.dt_nascimento, CURDATE()) BETWEEN 0 AND 14 THEN '0-14'
+                                                WHEN TIMESTAMPDIFF(YEAR, p.dt_nascimento, CURDATE()) BETWEEN 15 AND 29 THEN '15-29'
+                                                WHEN TIMESTAMPDIFF(YEAR, p.dt_nascimento, CURDATE()) BETWEEN 30 AND 59 THEN '30-59'
+                                                ELSE '+60'
+                                            END AS faixa_etaria,
+                                            COUNT(p.nr_sequencial) AS total_pessoas
+                                        FROM 
+                                            tab_pessoas p
+                                        GROUP BY 
+                                            faixa_etaria
+                                        ORDER BY 
+                                            faixa_etaria;
+                                        ");
 
             return response()->json([
-                'evolucaoCelula' => $evolucao_celula,
+                'faixaEtaria' => $faixa_etaria,
                 // 'fetchPessoasPresentes' => $pessoas_presentes,
             ], 200);
         } catch (Exception $error) {
