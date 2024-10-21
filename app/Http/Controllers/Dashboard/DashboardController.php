@@ -110,53 +110,22 @@ class DashboardController extends Controller
             //         tpm.membro_batizado  ='true'
             //     AND tpm.tp_participacao <> 'Convidado';");
 
-            $total_batizados = DB::select("SELECT 
-                            SUM(
-                                CASE 
-                                    -- Jovens homens por idade ou por estar em um grupo de Jovens
-                                    WHEN tp.sexo_pessoa = 'M' AND (DATEDIFF(CURDATE(), tp.dt_nascimento) / 365.25 <= 25 OR tg.tipo_grupo = 'Jovens') 
-                                    THEN 1 
-                                    ELSE 0 
-                                END
-                            ) AS jovens_homens,
-                            
-                            SUM(
-                                CASE 
-                                    -- Jovens mulheres por idade ou por estar em um grupo de Jovens
-                                    WHEN tp.sexo_pessoa = 'F' AND (DATEDIFF(CURDATE(), tp.dt_nascimento) / 365.25 <= 25 OR tg.tipo_grupo = 'Jovens') 
-                                    THEN 1 
-                                    ELSE 0 
-                                END
-                            ) AS jovens_mulheres,
-
-                            SUM(
-                                CASE 
-                                    -- Homens adultos que não estão em grupos de Jovens
-                                    WHEN tp.sexo_pessoa = 'M' AND DATEDIFF(CURDATE(), tp.dt_nascimento) / 365.25 > 25 AND tg.tipo_grupo <> 'Jovens' 
-                                    THEN 1 
-                                    ELSE 0 
-                                END
-                            ) AS homens,
-
-                            SUM(
-                                CASE 
-                                    -- Mulheres adultas que não estão em grupos de Jovens
-                                    WHEN tp.sexo_pessoa = 'F' AND DATEDIFF(CURDATE(), tp.dt_nascimento) / 365.25 > 25 AND tg.tipo_grupo <> 'Jovens' 
-                                    THEN 1 
-                                    ELSE 0 
-                                END
-                            ) AS mulheres
-                        FROM 
-                            tab_pessoas tp
-                        LEFT JOIN 
-                            tab_pessoa_ministerio tpm ON tpm.nr_seq_pessoa = tp.nr_sequencial
-                        LEFT JOIN 
-                            tab_grupo_membros tgm ON tgm.nr_seq_pessoa = tp.nr_sequencial -- Junção com membros dos grupos
-                        LEFT JOIN 
-                            tab_grupos tg ON tg.nr_sequencial = tgm.nr_seq_grupo -- Junção com a tabela de grupos para verificar o tipo de grupo
-                        WHERE 
-                            tpm.membro_batizado = 'true' 
-            AND tpm.tp_participacao <> 'Convidado';");
+            $total_batizados = DB::select("
+                                SELECT 
+                                    CASE 
+                                        WHEN p.sexo_pessoa = 'M' THEN 'Masculino'
+                                        WHEN p.sexo_pessoa = 'F' THEN 'Feminino'
+                                        ELSE 'Indefinido'
+                                    END AS sexo,
+                                    COUNT(p.nr_sequencial) AS total_batizados
+                                FROM 
+                                    tab_pessoas p
+                                JOIN 
+                                    tab_pessoa_ministerio pm ON p.nr_sequencial = pm.nr_seq_pessoa
+                                WHERE 
+                                    pm.membro_batizado = 'true'
+                                GROUP BY 
+                                    p.sexo_pessoa;");
 
             return response()->json([
                 'totalBatizados' => $total_batizados,
@@ -175,7 +144,7 @@ class DashboardController extends Controller
                             FROM 
                                 tab_pessoa_ministerio
                             WHERE 
-                                membro_batizado = false OR membro_batizado IS NULL OR membro_batizado = '';");
+                                membro_batizado = 'false' OR membro_batizado IS NULL OR membro_batizado = '';");
 
             return response()->json([
                 'totalNaoBatizados' => $total_nao_batizados,
