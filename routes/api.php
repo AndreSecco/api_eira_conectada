@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Administrativo\CultosController;
 use App\Http\Controllers\Cadastros\Grupos\GruposController;
 use App\Http\Controllers\Cadastros\Pessoas\PessoasController;
 use App\Http\Controllers\Celulas\CelulasController;
@@ -69,4 +70,10 @@ Route::group(['middleware' => 'jwt'], function () {
     Route::get('/dashboard/fetchNaoBatizados', [DashboardController::class, 'fetchNaoBatizados']);
     Route::get('/dashboard/fetchAniversariantes', [DashboardController::class, 'fetchAniversariantes']);
     Route::get('/dashboard/fetchLideresMes', [DashboardController::class, 'fetchLideresMes']);
+    
+    
+    Route::post('/cultos/registrarCulto', [CultosController::class, 'registrarCulto']);
+    Route::post('/cultos/uploadAnexoCulto/{id_culto}', [CultosController::class, 'uploadAnexoCulto']);
+    Route::get('/cultos/getConfirmacaoCulto', [CultosController::class, 'getConfirmacaoCulto']);
+    Route::post('/cultos/confirmarCulto', [CultosController::class, 'confirmarCulto']);
 });
