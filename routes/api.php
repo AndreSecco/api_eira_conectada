@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Administrativo\CultosController;
+use App\Http\Controllers\Administrativo\EmpresaController;
+use App\Http\Controllers\Administrativo\FilialController;
 use App\Http\Controllers\Cadastros\Grupos\GruposController;
 use App\Http\Controllers\Cadastros\Pessoas\PessoasController;
 use App\Http\Controllers\Celulas\CelulasController;
@@ -31,7 +33,15 @@ Route::post('/user/testeController', [UserController::class, 'testeController'])
 Route::post('/cadastros/registrarNovoUsuario', [PessoasController::class, 'createPessoa']);
 Route::post('/recuperar-senha', [UserController::class, 'sendEmail']);
 Route::post('/redefinir-senha', [UserController::class, 'redefinirSenha']);
+Route::get('/getEmpresas', [UserController::class, 'getEmpresas']);
+Route::get('/getFiliaisEmpresa', [UserController::class, 'getFiliaisEmpresa']);
 
+
+Route::group(['middleware' => 'admin'], function () {
+    Route::post('/empresa/registraEmpresa', [EmpresaController::class, 'registraEmpresa']);
+    Route::get('/empresa/getEmpresaId/{id_empresa}', [EmpresaController::class, 'getEmpresaId']);
+    Route::get('/empresa/getListaEmpresas', [EmpresaController::class, 'getListaEmpresas']);
+});
 
 Route::group(['middleware' => 'jwt'], function () {
     Route::post('/cadastros/createPessoa', [PessoasController::class, 'createPessoa']);
@@ -76,4 +86,13 @@ Route::group(['middleware' => 'jwt'], function () {
     Route::post('/cultos/uploadAnexoCulto/{id_culto}', [CultosController::class, 'uploadAnexoCulto']);
     Route::get('/cultos/getConfirmacaoCulto', [CultosController::class, 'getConfirmacaoCulto']);
     Route::post('/cultos/confirmarCulto', [CultosController::class, 'confirmarCulto']);
+    Route::get('/cultos/getOfertasCelulas', [CultosController::class, 'getOfertasCelulas']);
+    
+    
+    Route::post('/filial/registrarFilial', [FilialController::class, 'registrarFilial']);
+    Route::get('/filial/getFilialId/{id_filial}', [FilialController::class, 'getFilialId']);
+    Route::get('/filial/getListaFiliais', [FilialController::class, 'getListaFiliais']);
+    
+    Route::post('/empresa/alterarFilial', [FilialController::class, 'alterarFilial']);
+    
 });

@@ -7,7 +7,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Pagination\LengthAwarePaginator;
-
+use Illuminate\Pagination\Paginator;
 
 class PessoasController extends Controller
 {
@@ -22,6 +22,8 @@ class PessoasController extends Controller
                 'entrou_em' => 'required|date',
             ]);
 
+            $nr_seq_filial = $request->filial_pessoa['nr_sequencial'] ?? 0;
+
             if ($request->id_user) {
                 DB::table('tab_pessoas')
                     ->where('nr_sequencial', $request->id_user)
@@ -31,7 +33,7 @@ class PessoasController extends Controller
                         'dt_nascimento' => $data['data_nascimento'],
                         'entrou_em' => $data['entrou_em'],
                         'estado_civil' => $data['estado_civil'],
-                        'nr_seq_filial' => 1,
+                        'nr_seq_filial' => $nr_seq_filial,
                         'id_conjuge' => $request->id_conjuge,
                         'user_cadastro' => 1,
                         'whatsapp' => $request->whatsapp,
@@ -43,17 +45,18 @@ class PessoasController extends Controller
                         'st_ativo' => 'true'
                     ]);
 
+
                 $insert_pessoa = $request->id_user;
             } else {
                 $insert_pessoa = DB::table('tab_pessoas')->insertGetId([
                     'nome_pessoa' => $data['nome_pessoa'],
                     'sexo_pessoa' => $data['sexo_pessoa'],
-                    'nr_nivel'    => 1,
-                    'id_parent'   => 1,
+                    'nr_nivel'    => 10000,
+                    'id_parent'   => 10000,
                     'dt_nascimento' => $data['data_nascimento'],
                     'entrou_em' => $data['entrou_em'],
                     'estado_civil' => $data['estado_civil'],
-                    'nr_seq_filial' => 1,
+                    'nr_seq_filial' => $nr_seq_filial,
                     'id_conjuge' => $request->id_conjuge,
                     'user_cadastro' => 1,
                     'whatsapp' => $request->whatsapp,
@@ -63,6 +66,18 @@ class PessoasController extends Controller
                     'instagram' => $request->instagram,
                     'nr_seq_funcao' => 2,
                     'st_ativo' => 'true'
+                ]);
+
+
+                DB::table('tab_pessoas')
+                    ->where('nr_sequencial', $request->id_conjuge)
+                    ->update([
+                        'id_conjuge' => $request->id_user
+                    ]);
+
+                DB::table('tab_pessoa_filial')->insertGetId([
+                    'nr_seq_pessoa' => $insert_pessoa,
+                    'nr_seq_filial' => $nr_seq_filial
                 ]);
             }
 
@@ -154,28 +169,18 @@ class PessoasController extends Controller
         try {
             $perPage = $request->get('per_page', 10);
 
-            // $lista_pessoas = DB::table('tab_pessoas as tp')
-            //     ->select(
-            //         'tp.nr_sequencial',
-            //         'tp.nome_pessoa',
-            //         'tp.sexo_pessoa',
-            //         'tp.dt_nascimento',
-            //         'tp.entrou_em',
-            //         'tpm.dt_batismo',
-            //         'tp2.nome_pessoa as nome_lider',
-            //         'tpm.tp_participacao'
-            //     )
-            //     ->leftJoin('tab_pessoa_ministerio as tpm', 'tp.nr_sequencial', '=', 'tpm.nr_seq_pessoa')
-            //     ->leftJoin('tab_pessoas as tp2', 'tp2.nr_sequencial', '=', 'tpm.nr_seq_lider')
-            //     ->distinct()
-            //     ->orderBy('tp.nome_pessoa', 'ASC')
-            //     ->where('tp.st_ativo', 'true')
-            //     ->paginate($perPage);
+            $filiaisStr = implode(",", array_map(function ($filial) {
+                return $filial->nr_sequencial;
+            }, $request->auth->filiais));
+
             $codigoUsuario = $request->auth->nr_sequencial; // Código da pessoa logada
             $nrNivelUsuario = $request->auth->nr_nivel; // Código da pessoa logada
-            // return response()->json($nrNivelUsuario);
-            $lista_pessoas = DB::select(
-                DB::raw("
+
+            // Filtros
+            $nomePessoa = $request->get('nome_pessoa');
+            $nomeFilter = !empty($nomePessoa) ? "AND tp.nome_pessoa LIKE :nomePessoa" : "";
+
+            $query = "
                 WITH RECURSIVE relacionados AS (
                     -- Primeiro nível, o usuário logado
                     SELECT tp.nr_sequencial, tp.id_parent, tp.nr_nivel
@@ -203,6 +208,7 @@ class PessoasController extends Controller
                 LEFT JOIN tab_pessoa_ministerio tpm ON tp.nr_sequencial = tpm.nr_seq_pessoa
                 LEFT JOIN tab_pessoas tp2 ON tp2.nr_sequencial = tpm.nr_seq_lider
                 WHERE tp.st_ativo = 'true'
+                AND tp.nr_seq_filial IN ($filiaisStr)
                 AND (
                     tp.nr_nivel > :nrNivelUsuario
                     OR tp.nr_sequencial = :codigoUsuario2
@@ -210,18 +216,26 @@ class PessoasController extends Controller
                 AND tp.nr_sequencial IN (
                     SELECT nr_sequencial FROM relacionados
                 )
+                $nomeFilter
                 ORDER BY tp.nome_pessoa ASC
-            "),
-                [
-                    'codigoUsuario1' => $codigoUsuario,
-                    'codigoUsuario2' => $codigoUsuario,
-                    'nrNivelUsuario' => $nrNivelUsuario
-                ]
-            );
+            ";
 
+            $bindings = [
+                'codigoUsuario1' => $codigoUsuario,
+                'codigoUsuario2' => $codigoUsuario,
+                'nrNivelUsuario' => $nrNivelUsuario
+            ];
+
+            // Adiciona o parâmetro do filtro de nome, se necessário
+            if (!empty($nomePessoa)) {
+                $bindings['nomePessoa'] = "%{$nomePessoa}%";
+            }
+
+            $lista_pessoas = DB::select(DB::raw($query), $bindings);
             // Se precisar paginar os resultados, você pode fazer manualmente:
             $currentPage = LengthAwarePaginator::resolveCurrentPage();
-            $collection = collect($lista_pessoas);
+            $collection = collect(array_values($lista_pessoas));
+
             $paginatedResults = new LengthAwarePaginator(
                 $collection->forPage($currentPage, $perPage),
                 $collection->count(),
@@ -242,6 +256,27 @@ class PessoasController extends Controller
             $nr_sequencial = DB::table('tab_pessoa_ministerio')
                 ->where('nr_seq_pessoa', $request->id_user)
                 ->first();
+
+            if (!empty($request->nr_seq_lider)) {
+                $sql_filial = DB::table('tab_pessoas')
+                    ->select('nr_seq_filial', 'id_parent', 'nr_nivel')
+                    ->where('nr_sequencial', $request->nr_seq_lider)
+                    ->first();
+
+                // Alterar na tab_pessoas a filial da pessoa
+                $sql_tab_pessoas = DB::table('tab_pessoas')->where('nr_sequencial', $request->id_user)
+                    ->update([
+                        'nr_seq_filial' => $sql_filial->nr_seq_filial,
+                        'id_parent' => $sql_filial->id_parent + 1,
+                        'nr_nivel' => $sql_filial->nr_nivel + 1
+                    ]);
+
+                // Dar acesso pela tab_pessoa_filial
+                $sql_pessoa_filial = DB::table('tab_pessoa_filial')->insertGetId([
+                    'nr_seq_pessoa' => $request->id_user,
+                    'nr_seq_filial' => $sql_filial->nr_seq_filial
+                ]);
+            }
 
             if (!empty($nr_sequencial)) {
                 $insert_ministerio = DB::table('tab_pessoa_ministerio')

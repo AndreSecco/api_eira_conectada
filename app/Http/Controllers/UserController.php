@@ -77,12 +77,13 @@ class UserController extends Controller
         }
     }
 
-    protected function jwt($usuario)
+    protected function jwt($usuario, $filiais_selecionadas)
     {
         $payload = [
             'iss' => "lumen-jwt", // Issuer of the token
-            'sub' => $usuario->nr_sequencial, // Subject of the token
+            'sub' => $usuario->nr_seq_pessoa, // Subject of the token
             'usuario' => $usuario->nr_seq_filial, // filial do colaborador
+            'filiais' => $filiais_selecionadas, // filial do colaborador
             'iat' => time(), // Time when JWT was issued. 
             'exp' => time() + 60 * 60 * 24 * 365 * 5 // Expiration time = 5 years
         ];
@@ -96,7 +97,7 @@ class UserController extends Controller
     {
         try {
             $user = DB::table('tab_users as tu')
-                ->select('tp.nr_sequencial', 'tu.*', 'tp.*')
+                ->select('tp.nr_sequencial', 'tu.*', 'tp.*', 'tf.*')
                 ->join('tab_pessoas as tp', 'tu.nr_seq_pessoa', '=', 'tp.nr_sequencial')
                 ->Leftjoin('tab_pessoa_ministerio as tm', 'tp.nr_sequencial', '=', 'tm.nr_seq_pessoa')
                 ->Leftjoin('tab_pessoa_contato as tc', 'tp.nr_sequencial', '=', 'tc.nr_seq_pessoa')
@@ -110,9 +111,28 @@ class UserController extends Controller
                 return response()->json('Usuário não encontrado', 400);
             }
             
+            $filiais = DB::table('tab_pessoa_filial as tpf')
+            ->distinct()
+            ->join('tab_filiais as tf', 'tpf.nr_seq_filial', '=', 'tf.nr_sequencial')
+            ->where('nr_seq_pessoa', $user->nr_seq_pessoa)
+            ->get();
+
+            $filiais_selecionadas = array($filiais[0]);
+
+            if($request->newFilial){
+                $filiais_selecionadas = DB::table('tab_filiais as tf')
+                ->distinct()
+                ->whereIn('nr_sequencial', $request->newFilial)
+                ->get();
+
+                // $filiais_selecionadas = $request->newFilial;
+            }
+            
             return response()->json([
-                'token' => $this->jwt($user),
-                'user' => $user
+                'token' => $this->jwt($user, $filiais_selecionadas),
+                'user' => $user,
+                'filiais' => $filiais,
+                'filiais_selecionadas' => $filiais_selecionadas
                 // 'user' => auth()->user()
             ]);
             // return response()->json($user, 200);
@@ -125,5 +145,24 @@ class UserController extends Controller
     {
         $teste = DB::table('tab_pessoas')->get();
         return response()->json($teste, 200);
+    }
+
+    public function getEmpresas(Request $request)
+    {
+        $sql_empresas = DB::table('tab_empresas')
+        ->distinct()
+        ->get();
+
+        return response()->json($sql_empresas, 200);
+    }
+    public function getFiliaisEmpresa(Request $request)
+    {
+        $sql_empresas = DB::table('tab_filiais as tf')
+        ->join('tab_empresas as te', 'tf.nr_seq_empresa', '=', 'te.nr_sequencial')
+        ->distinct()
+        ->where('te.nome_empresa', $request->nome_empresa)
+        ->get();
+
+        return response()->json($sql_empresas, 200);
     }
 }

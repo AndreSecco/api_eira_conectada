@@ -19,6 +19,12 @@ class GruposController extends Controller
             ]);
 
             $dias_semana = json_encode($request->dias_semana);
+
+            // return response()->json($request['auth'], 200);
+            $filial_lider = DB::table('tab_pessoas')
+            ->where('nr_sequencial', $data['nr_seq_lider'])
+            ->first();
+
             if ($request->id_grupo) {
                 DB::table('tab_grupos')
                     ->where('nr_sequencial', $request->id_grupo)
@@ -33,7 +39,7 @@ class GruposController extends Controller
                         'dias_semana' => $dias_semana,
                         'horario' => $request->horario,
                         'updated_at' => date('Y-m-d h:i:s'),
-                        'nr_seq_filial' => 1,
+                        'nr_seq_filial' => $filial_lider->nr_seq_filial,
                     ]);
 
                 $update_membro_lider = DB::table('tab_grupo_membros')
@@ -70,7 +76,7 @@ class GruposController extends Controller
                     'dias_semana' => $dias_semana,
                     'horario' => $request->horario,
                     'created_at' => date('Y-m-d h:i:s'),
-                    'nr_seq_filial' => 1,
+                    'nr_seq_filial' => $filial_lider->nr_seq_filial,
                 ]);
 
                 $insert_membro_lider = DB::table('tab_grupo_membros')->insert([

@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Pessoa;
 
-class JwtMiddleware
+class AdminMiddleware
 {
     public function handle(Request $request, Closure $next)
     {
@@ -22,11 +22,15 @@ class JwtMiddleware
         try {
             $decoded = JWT::decode($token, new Key(env('JWT_SECRET'), 'HS256'));
             // return response()->json(Pessoa::find($decoded->sub));
-            $request->merge(['auth' => Pessoa::find($decoded->sub)]);
-            $request->auth->filiais = $decoded->filiais;
+            $pessoa = Pessoa::find($decoded->sub);
+
+            if(!$pessoa && $pessoa->nr_sequencial != 1){
+                return response()->json('Usuário não autenticado');
+            }
+
+            $request->merge(['auth' => $pessoa]);
         } catch (\Exception $e) {
-            $decoded = JWT::decode($token, new Key(env('JWT_SECRET'), 'HS256'));
-            return response()->json(['error' => $decoded->filiais], 401);
+            return response()->json(['error' => 'Token inválido ou expirado'], 401);
         }
 
         return $next($request);

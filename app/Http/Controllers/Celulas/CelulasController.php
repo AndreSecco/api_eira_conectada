@@ -37,6 +37,7 @@ class CelulasController extends Controller
             $select_dados_celula = DB::table('tab_celulas as tc')
                 ->join('tab_grupos as tg', 'tc.nr_seq_grupo', '=', 'tg.nr_sequencial')
                 ->where('tc.nr_seq_grupo', $id_grupo)
+                ->orderBy('tc.data_celula', 'DESC')
                 ->get();
 
             // $select_dados_celula->participantes = DB::table('tab_celulas_presentes')
@@ -54,11 +55,18 @@ class CelulasController extends Controller
     public function finalizarCelula(Request $request)
     {
         try {
+            $valor_ofertas = str_replace([','], ['.'], $request->ofertas_voluntarias);
+
+            // return response()->json($valor_ofertas, 200);
+            $select_lider = DB::table('tab_grupos as tg')
+            ->join('tab_pessoas as tp', 'tg.nr_seq_lider', '=', 'tp.nr_sequencial')
+            ->first();
+
             $insert_celula = DB::table('tab_celulas')->insertGetId([
                 'nr_seq_grupo' => $request->nr_seq_grupo,
                 'obs_celula' => $request->nr_seq_grupo,
-                'ofertas_voluntarias' => $request->ofertas_voluntarias,
-                'nr_nivel' => 1,
+                'ofertas_voluntarias' => $valor_ofertas,
+                'nr_nivel' => $select_lider->nr_nivel,
                 'created_at' => date('Y-m-d m:i:s'),
                 'data_celula' => date('Y-m-d m:i:s'),
                 'nr_seq_pregou' => $request->quem_pregou,
@@ -86,7 +94,7 @@ class CelulasController extends Controller
                             'sexo_pessoa' => 'I',
                             'nr_nivel'    => 6,
                             'id_parent'   => 1,
-                            'nr_seq_filial' => 1,
+                            'nr_seq_filial' => $select_lider->nr_seq_filial,
                             'whatsapp' => $request->whatsapp,
                             'st_ativo' => 'true'
                         ]);
@@ -100,6 +108,16 @@ class CelulasController extends Controller
                     }
                 }
             }
+
+            // Gera movimento financeiro
+
+            $financeiro = DB::table('tab_registros_financeiros')->insert([
+                'nr_seq_cadastro' => $request['auth']->nr_sequencial,
+                'tipo_transacao' => 1, // TIPO CELULA
+                'status_transacao' => 'P',
+                'valor_transacao' => $valor_ofertas,
+                'nr_seq_filial' => $select_lider->nr_seq_filial
+            ]);
 
             return response()->json($insert_celula, 200);
         } catch (Exception $error) {

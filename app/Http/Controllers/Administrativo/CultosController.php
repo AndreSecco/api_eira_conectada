@@ -15,6 +15,9 @@ class CultosController extends Controller
     public function registrarCulto(Request $request)
     {
         try {
+            $filiaisStr = implode(",", array_map(function ($filial) {
+                return $filial->nr_sequencial;
+            }, $request->auth->filiais));
 
             $sql_insert = DB::table('tab_cultos')->insertGetId([
                 'nr_seq_quem_pregou' => $request->quem_pregou,
@@ -23,12 +26,12 @@ class CultosController extends Controller
                 'horario' => $request->horario,
                 'novos_convidados' => $request->novos_convidados,
                 'criancas_apresentadas' => $request->criancas_apresentadas,
-                'dizimos' => $request->dizimos,
-                'ofertas_gerais' => $request->ofertas_gerais,
-                'doacoes_especiais' => $request->doacoes_especiais,
-                'outras_entradas' => $request->outras_entradas,
-                'ofertas_celulas' => $request->ofertas_celulas,
-                'valor_total' => $request->valor_total,
+                'dizimos' => $request->dizimos ? str_replace([','], ['.'], $request->dizimos) : 0,
+                'ofertas_gerais' => $request->ofertas_gerais ? str_replace([','], ['.'], $request->ofertas_gerais) : 0 ,
+                'doacoes_especiais' => $request->doacoes_especiais ? str_replace([','], ['.'], $request->doacoes_especiais) : 0,
+                'outras_entradas' => $request->outras_entradas ? str_replace([','], ['.'], $request->outras_entradas) : 0,
+                'ofertas_celulas' => str_replace([','], ['.'], $request->ofertas_celulas),
+                'valor_total' => str_replace([','], ['.'], $request->valor_total),
             ]);
 
             $sql_assinatura_culto = DB::table('tab_assinatura_culto')->insertGetId([
@@ -36,6 +39,55 @@ class CultosController extends Controller
                 'nr_seq_pessoa' =>  $request->diacono_01,
                 'st_aprovado' => 'false'
             ]);
+
+            $sql_assinatura_culto = DB::table('tab_assinatura_culto')->insertGetId([
+                'nr_seq_culto' => $sql_insert,
+                'nr_seq_pessoa' =>  $request->diacono_02,
+                'st_aprovado' => 'false'
+            ]);
+
+            $pastor_tesoureiro = DB::table('tab_pessoas')
+            ->where('nr_seq_filial', $request->auth->nr_seq_filial)
+            ->where('nr_seq_funcao', 3)
+            ->orWhere('nr_seq_funcao', 4)
+            ->get();
+
+            foreach($pastor_tesoureiro as $value){
+                DB::table('tab_assinatura_culto')->insertGetId([
+                    'nr_seq_culto' => $sql_insert,
+                    'nr_seq_pessoa' =>  $value->nr_sequencial,
+                    'st_aprovado' => 'false'
+                ]);
+            }
+
+            DB::select("UPDATE tab_registros_financeiros trf2
+                        set trf2.status_transacao = 'O', nr_seq_culto = " . $sql_insert . "
+                        where nr_sequencial in (
+                            SELECT trf.nr_sequencial
+                            from tab_registros_financeiros trf
+                            where trf.tipo_transacao = 1
+                            and trf.status_transacao = 'P'
+                            AND trf.nr_seq_filial in (" . $filiaisStr . ")
+                        )");
+
+            return response()->json($sql_insert, 200);
+        } catch (Exception $error) {
+            return response()->json($error->getMessage(), 400);
+        }
+    }
+
+    public function getOfertasCelulas(Request $request)
+    {
+        try {
+            $filiaisStr = implode(",", array_map(function ($filial) {
+                return $filial->nr_sequencial;
+            }, $request->auth->filiais));
+
+            $sql_insert = DB::select("SELECT SUM(trf.valor_transacao) as ofertas 
+                                    from tab_registros_financeiros trf
+                                    where trf.tipo_transacao = 1
+                                    and trf.status_transacao = 'P'
+                                    AND trf.nr_seq_filial in (" . $filiaisStr . ")");
 
             return response()->json($sql_insert, 200);
         } catch (Exception $error) {
@@ -80,6 +132,7 @@ class CultosController extends Controller
             return response()->json(['error' => $error->getMessage(), 500]);
         }
     }
+
     public function confirmarCulto(Request $request)
     {
         try {
