@@ -35,10 +35,21 @@ class CelulasController extends Controller
                 ->get();
 
             $select_dados_celula = DB::table('tab_celulas as tc')
+                ->select('tg.*', 'tc.nr_sequencial as id_celula', 'tc.*')
                 ->join('tab_grupos as tg', 'tc.nr_seq_grupo', '=', 'tg.nr_sequencial')
                 ->where('tc.nr_seq_grupo', $id_grupo)
-                ->orderBy('tc.data_celula', 'DESC')
+                ->orderBy('tc.data_celula', 'ASC')
                 ->get();
+
+            $select_dados_celula = $select_dados_celula->map(function ($value){
+                $value->pessoas_presentes = DB::table('tab_celula_presentes')
+                ->where('nr_seq_celula', $value->id_celula)
+                ->count('nr_seq_pessoa');
+
+                return $value;
+            });
+
+            // $select_dados_celula['pessoas_presentes'] = 5;
 
             // $select_dados_celula->participantes = DB::table('tab_celulas_presentes')
             // ->where('nr_seq_grupo')
@@ -64,7 +75,7 @@ class CelulasController extends Controller
 
             $insert_celula = DB::table('tab_celulas')->insertGetId([
                 'nr_seq_grupo' => $request->nr_seq_grupo,
-                'obs_celula' => $request->nr_seq_grupo,
+                'obs_celula' => $request->obs_celula,
                 'ofertas_voluntarias' => $valor_ofertas,
                 'nr_nivel' => $select_lider->nr_nivel,
                 'created_at' => date('Y-m-d m:i:s'),

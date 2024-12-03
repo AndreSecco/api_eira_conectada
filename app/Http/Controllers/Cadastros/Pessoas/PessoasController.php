@@ -22,7 +22,11 @@ class PessoasController extends Controller
                 'entrou_em' => 'required|date',
             ]);
 
-            $nr_seq_filial = $request->filial_pessoa['nr_sequencial'] ?? 0;
+            $nr_seq_filial = $request->auth->filiais[0]->nr_sequencial ?? 0;
+
+            $user_cadastrando = DB::table('tab_pessoas')
+            ->where('nr_sequencial', $request->auth->nr_sequencial)
+            ->first();
 
             if ($request->id_user) {
                 DB::table('tab_pessoas')
@@ -51,8 +55,8 @@ class PessoasController extends Controller
                 $insert_pessoa = DB::table('tab_pessoas')->insertGetId([
                     'nome_pessoa' => $data['nome_pessoa'],
                     'sexo_pessoa' => $data['sexo_pessoa'],
-                    'nr_nivel'    => 10000,
-                    'id_parent'   => 10000,
+                    'nr_nivel'    => $user_cadastrando->nr_nivel + 1,
+                    'id_parent'   => $user_cadastrando->nr_sequencial,
                     'dt_nascimento' => $data['data_nascimento'],
                     'entrou_em' => $data['entrou_em'],
                     'estado_civil' => $data['estado_civil'],
