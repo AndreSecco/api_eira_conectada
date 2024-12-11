@@ -59,8 +59,8 @@ class PessoasController extends Controller
                 $insert_pessoa = DB::table('tab_pessoas')->insertGetId([
                     'nome_pessoa' => $data['nome_pessoa'],
                     'sexo_pessoa' => $data['sexo_pessoa'],
-                    'nr_nivel'    => $user_cadastrando->nr_nivel + 1,
-                    'id_parent'   => $user_cadastrando->nr_sequencial,
+                    'nr_nivel'    => $user_cadastrando->nr_nivel ? $user_cadastrando->nr_nivel + 1 : 1,
+                    'id_parent'   => $user_cadastrando->nr_sequencial ?? 0,
                     'dt_nascimento' => $data['data_nascimento'],
                     'entrou_em' => $data['entrou_em'],
                     'estado_civil' => $data['estado_civil'],
