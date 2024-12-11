@@ -22,7 +22,7 @@ class PessoasController extends Controller
                 'entrou_em' => 'required|date',
             ]);
 
-            $nr_seq_filial = $request->auth->filiais[0]->nr_sequencial ?? 0;
+            $nr_seq_filial = $request->auth->filiais->nr_sequencial ?? 0;
 
             $user_cadastrando = DB::table('tab_pessoas')
             ->where('nr_sequencial', $request->auth->nr_sequencial)
