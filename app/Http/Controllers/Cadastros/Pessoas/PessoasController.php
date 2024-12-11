@@ -24,9 +24,13 @@ class PessoasController extends Controller
 
             $nr_seq_filial = $request->auth->filiais->nr_sequencial ?? 0;
 
-            $user_cadastrando = DB::table('tab_pessoas')
-            ->where('nr_sequencial', $request->auth->nr_sequencial)
-            ->first();
+            if(!empty($request->auth)){
+                $user_cadastrando = DB::table('tab_pessoas')
+                ->where('nr_sequencial', $request->auth->nr_sequencial)
+                ->first();
+            } else {
+                $user_cadastrando = "";
+            }
 
             if ($request->id_user) {
                 DB::table('tab_pessoas')
