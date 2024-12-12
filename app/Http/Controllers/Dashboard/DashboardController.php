@@ -14,11 +14,21 @@ class DashboardController extends Controller
     public function fetchTextCardsData(Request $request)
     {
         try {
+            $filiais = $this->getFiliais($request);
+
+            $nr_nivel = $request->auth->nr_nivel;
+
             $selectPessoas = DB::table('tab_pessoas')
                 ->where('st_ativo', 'true')
+                ->whereIn('nr_seq_filial', [$filiais])
+                ->where(function ($q) use ($request, $nr_nivel){
+                    $q->where('nr_nivel', '>', $nr_nivel)
+                        ->orWhere('nr_sequencial', '=', $request->auth->nr_sequencial);
+                })
                 ->count();
 
             $selectGrupos = DB::table('tab_grupos')
+                ->whereIn('nr_seq_filial', [$filiais])
                 ->count();
 
             return response()->json([
@@ -207,5 +217,14 @@ class DashboardController extends Controller
         } catch (Exception $error) {
             return response()->json($error->getMessage(), 400);
         }
+    }
+
+    public function getFiliais($request)
+    {
+        $filiaisStr = implode(",", array_map(function ($filial) {
+            return $filial->nr_sequencial;
+        }, $request->auth->filiais));
+        
+        return $filiaisStr;
     }
 }
