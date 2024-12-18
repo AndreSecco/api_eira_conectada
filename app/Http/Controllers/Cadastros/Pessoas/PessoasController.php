@@ -21,13 +21,14 @@ class PessoasController extends Controller
                 'estado_civil' => 'required|string',
                 'entrou_em' => 'required|date',
             ]);
-
-            $nr_seq_filial = $request->auth->filiais->nr_sequencial ?? 0;
+            
+            $nr_seq_filial = $request->auth->filiais[0]->nr_seq_filial;
 
             if(!empty($request->auth)){
                 $user_cadastrando = DB::table('tab_pessoas')
                 ->where('nr_sequencial', $request->auth->nr_sequencial)
                 ->first();
+
             } else {
                 $user_cadastrando = "";
             }
@@ -41,7 +42,7 @@ class PessoasController extends Controller
                         'dt_nascimento' => $data['data_nascimento'],
                         'entrou_em' => $data['entrou_em'],
                         'estado_civil' => $data['estado_civil'],
-                        'nr_seq_filial' => $nr_seq_filial,
+                        // 'nr_seq_filial' => $nr_seq_filial,
                         'id_conjuge' => $request->id_conjuge,
                         'user_cadastro' => 1,
                         'whatsapp' => $request->whatsapp,
@@ -175,6 +176,7 @@ class PessoasController extends Controller
     public function getListaPessoasInicio(Request $request)
     {
         try {
+            // return response()->json($request->auth->filiais[0]->nr_seq_filial, 200);
             $perPage = $request->get('per_page', 10);
 
             $filiaisStr = implode(",", array_map(function ($filial) {
