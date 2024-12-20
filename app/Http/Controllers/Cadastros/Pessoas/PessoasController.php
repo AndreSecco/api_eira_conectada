@@ -267,26 +267,26 @@ class PessoasController extends Controller
                 ->where('nr_seq_pessoa', $request->id_user)
                 ->first();
 
-            if (!empty($request->nr_seq_lider)) {
-                $sql_filial = DB::table('tab_pessoas')
-                    ->select('nr_seq_filial', 'id_parent', 'nr_nivel')
-                    ->where('nr_sequencial', $request->nr_seq_lider)
-                    ->first();
+            // if (!empty($request->nr_seq_lider)) {
+                // $sql_filial = DB::table('tab_pessoas')
+                //     ->select('nr_seq_filial', 'id_parent', 'nr_nivel')
+                //     ->where('nr_sequencial', $request->nr_seq_lider)
+                //     ->first();
 
                 // Alterar na tab_pessoas a filial da pessoa
-                $sql_tab_pessoas = DB::table('tab_pessoas')->where('nr_sequencial', $request->id_user)
-                    ->update([
-                        'nr_seq_filial' => $sql_filial->nr_seq_filial,
-                        'id_parent' => $sql_filial->id_parent + 1,
-                        'nr_nivel' => $sql_filial->nr_nivel + 1
-                    ]);
+                // $sql_tab_pessoas = DB::table('tab_pessoas')->where('nr_sequencial', $request->id_user)
+                //     ->update([
+                //         'nr_seq_filial' => $sql_filial->nr_seq_filial,
+                //         'id_parent' => $sql_filial->id_parent + 1,
+                //         'nr_nivel' => $sql_filial->nr_nivel + 1
+                //     ]);
 
                 // Dar acesso pela tab_pessoa_filial
-                $sql_pessoa_filial = DB::table('tab_pessoa_filial')->insertGetId([
-                    'nr_seq_pessoa' => $request->id_user,
-                    'nr_seq_filial' => $sql_filial->nr_seq_filial
-                ]);
-            }
+                // $sql_pessoa_filial = DB::table('tab_pessoa_filial')->insertGetId([
+                //     'nr_seq_pessoa' => $request->id_user,
+                //     'nr_seq_filial' => $sql_filial->nr_seq_filial
+                // ]);
+            // }
 
             if (!empty($nr_sequencial)) {
                 $insert_ministerio = DB::table('tab_pessoa_ministerio')
