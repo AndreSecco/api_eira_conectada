@@ -299,7 +299,7 @@ class PessoasController extends Controller
                         'tp_participacao' => $request->tp_participacao,
                         'participacao_desde' => $request->participacao_desde,
                         'possui_lider' => $request->possui_lider,
-                        'nr_seq_lider' => $request->nr_seq_lider,
+                        'nr_seq_lider' => $request->nr_seq_lider['nr_sequencial'],
                     ]);
             } else {
                 $insert_ministerio = DB::table('tab_pessoa_ministerio')->insertGetId([
