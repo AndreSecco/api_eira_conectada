@@ -60,15 +60,17 @@ class CultosController extends Controller
                 ]);
             }
 
-            DB::select("UPDATE tab_registros_financeiros trf2
-                        set trf2.status_transacao = 'O', nr_seq_culto = " . $sql_insert . "
-                        where nr_sequencial in (
-                            SELECT trf.nr_sequencial
-                            from tab_registros_financeiros trf
-                            where trf.tipo_transacao = 1
-                            and trf.status_transacao = 'P'
-                            AND trf.nr_seq_filial in (" . $filiaisStr . ")
-                        )");
+            DB::select("UPDATE tab_registros_financeiros
+                        SET status_transacao = 'O', nr_seq_culto = " . $sql_insert . "
+                        WHERE nr_sequencial IN (
+                            SELECT nr_sequencial FROM (
+                                SELECT trf.nr_sequencial
+                                FROM tab_registros_financeiros trf
+                                WHERE trf.tipo_transacao = 1
+                                AND trf.status_transacao = 'P'
+                                AND trf.nr_seq_filial IN (" . $filiaisStr . ")
+                            ) AS subquery
+                        );");
 
             return response()->json($sql_insert, 200);
         } catch (Exception $error) {
