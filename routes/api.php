@@ -58,11 +58,15 @@ Route::group(['middleware' => 'jwt'], function () {
     Route::post('/cadastros/uploadFileUser/{id_user}', [PessoasController::class, 'uploadFiles']);
     
     Route::post('/cadastros/createGrupo', [GruposController::class, 'createGrupo']);
+    Route::post('/cadastros/createEvento', [GruposController::class, 'createEvento']);
+    Route::post('/cadastros/registrarIngresso', [GruposController::class, 'registrarIngresso']);
     
 
     Route::get('/cadastros/getListaGruposInicio', [GruposController::class, 'getListaGruposInicio']);
+    Route::get('/cadastros/getListaEventosInicio', [GruposController::class, 'getListaEventosInicio']);
     Route::post('/cadastros/grupos/createContato', [GruposController::class, 'createContato']);
     Route::get('/cadastros/grupos/getGrupoId/{id_grupo}', [GruposController::class, 'getGrupoId']);
+    Route::get('/cadastros/eventos/getEventoId/{id_evento}', [GruposController::class, 'getEventoId']);
     Route::post('/inserirMembroCelula', [GruposController::class, 'inserirMembroCelula']);
     Route::post('/deleteMembroCelula', [GruposController::class, 'deleteMembroCelula']);
     

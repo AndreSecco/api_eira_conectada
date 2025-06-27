@@ -22,8 +22,8 @@ class GruposController extends Controller
 
             // return response()->json($request['auth'], 200);
             $filial_lider = DB::table('tab_pessoas')
-            ->where('nr_sequencial', $data['nr_seq_lider'])
-            ->first();
+                ->where('nr_sequencial', $data['nr_seq_lider'])
+                ->first();
 
             if ($request->id_grupo) {
                 DB::table('tab_grupos')
@@ -97,6 +97,59 @@ class GruposController extends Controller
             }
 
             return response()->json($insert_grupo, 200);
+        } catch (Exception $error) {
+            return response()->json($error->getMessage(), 400);
+        }
+    }
+    public function createEvento(Request $request)
+    {
+        try {
+            if ($request->id_evento) {
+                DB::table('tab_eventos')
+                    ->where('nr_sequencial', $request->id_evento)
+                    ->update([
+                        'nome_evento' => $request->nome_evento,
+                        'data_evento' => $request->data_evento,
+                        'local_evento' => $request->local_evento,
+                        'tp_pago' => $request->tp_pago,
+                        'evento_para' => $request->evento_para
+                    ]);
+
+                $insert_evento = $request->id_evento;
+            } else {
+                $insert_evento = DB::table('tab_eventos')->insertGetId([
+                    'nome_evento' => $request->nome_evento,
+                    'data_evento' => $request->data_evento,
+                    'local_evento' => $request->local_evento,
+                    'tp_pago' => $request->tp_pago,
+                    'evento_para' => $request->evento_para,
+                    'nr_seq_filial' => $request->auth->nr_seq_filial
+                ]);
+            }
+
+            return response()->json($insert_evento, 200);
+        } catch (Exception $error) {
+            return response()->json($error->getMessage(), 400);
+        }
+    }
+    public function registrarIngresso(Request $request)
+    {
+        try {
+            $sql_valida = DB::table('tab_registra_ingressos')
+            ->where('nr_seq_evento', $request->id_evento)
+            ->where('nr_seq_pessoa', $request->id)
+            ->first();
+
+            if ($sql_valida) {
+                return response()->json(['message' => 'Usuário já registrado em evento!', 400]);
+            }
+
+            $insert_ingresso = DB::table('tab_registra_ingressos')->insert([
+                'nr_seq_evento' => $request->id_evento,
+                'nr_seq_pessoa' => $request->id
+            ]);
+
+            return response()->json($insert_ingresso, 200);
         } catch (Exception $error) {
             return response()->json($error->getMessage(), 400);
         }
@@ -321,6 +374,21 @@ class GruposController extends Controller
         }
     }
 
+    public function getEventoId(Request $request, $id_evento)
+    {
+        try {
+            $evento = DB::table('tab_eventos')
+                ->where('nr_sequencial', $id_evento)
+                ->first();
+
+            return response()->json([
+                'evento' => $evento,
+            ], 200);
+        } catch (Exception $error) {
+            return response()->json($error->getMessage(), 400);
+        }
+    }
+
     public function getListaGruposInicio(Request $request)
     {
         try {
@@ -353,6 +421,21 @@ class GruposController extends Controller
                 ->paginate($perPage);
 
             // $lista_pessoas = $lista_pessoas->paginate($request->get('per_page'));
+
+            return response()->json($lista_grupos, 200);
+        } catch (Exception $error) {
+            return response()->json($error->getMessage(), 400);
+        }
+    }
+    public function getListaEventosInicio(Request $request)
+    {
+        try {
+            $perPage = $request->get('per_page', 10);
+
+            $lista_grupos =  DB::table('tab_eventos as te')
+                ->where('te.nr_seq_filial', $request->auth->nr_seq_filial)
+                ->orderBy('te.nr_sequencial', 'ASC')
+                ->paginate($perPage);
 
             return response()->json($lista_grupos, 200);
         } catch (Exception $error) {

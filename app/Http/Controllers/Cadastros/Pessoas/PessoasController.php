@@ -8,12 +8,15 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
+use Mockery\Undefined;
 
 class PessoasController extends Controller
 {
     public function createPessoa(Request $request)
     {
         try {
+
+            // return response()->json($request->filial_pessoa['nr_sequencial'], 200);
             $data = $this->validate($request, [
                 'nome_pessoa' => 'required|string',
                 'sexo_pessoa' => 'required|string',
@@ -21,8 +24,16 @@ class PessoasController extends Controller
                 'estado_civil' => 'required|string',
                 'entrou_em' => 'required|date',
             ]);
-            
-            $nr_seq_filial = $request->auth->filiais[0]->nr_seq_filial;
+
+            $nr_seq_filial = '';
+
+            if($request->auth !== null){
+                $nr_seq_filial = $request->auth->filiais[0]->nr_seq_filial;
+            }            
+
+            if($nr_seq_filial == '') {
+                $nr_seq_filial = $request->filial_pessoa['nr_sequencial'];
+            }
 
             if(!empty($request->auth)){
                 $user_cadastrando = DB::table('tab_pessoas')
@@ -30,7 +41,9 @@ class PessoasController extends Controller
                 ->first();
 
             } else {
-                $user_cadastrando = "";
+                $user_cadastrando = DB::table('tab_pessoas')
+                ->where('nr_sequencial', $request->id_user_parend)
+                ->first();
             }
 
             if ($request->id_user) {
@@ -51,7 +64,7 @@ class PessoasController extends Controller
                         'facebook' => $request->facebook,
                         'instagram' => $request->instagram,
                         'nr_seq_funcao' => 2,
-                        'st_ativo' => 'true'
+                        'st_ativo' => 'true',
                     ]);
 
 
@@ -61,11 +74,11 @@ class PessoasController extends Controller
                     'nome_pessoa' => $data['nome_pessoa'],
                     'sexo_pessoa' => $data['sexo_pessoa'],
                     'nr_nivel'    => $user_cadastrando->nr_nivel ? $user_cadastrando->nr_nivel + 1 : 1,
-                    'id_parent'   => $user_cadastrando->nr_sequencial ?? 7,
+                    'id_parent'   => $user_cadastrando->nr_sequencial,
                     'dt_nascimento' => $data['data_nascimento'],
                     'entrou_em' => $data['entrou_em'],
                     'estado_civil' => $data['estado_civil'],
-                    'nr_seq_filial' => $nr_seq_filial,
+                    'nr_seq_filial' => 9,
                     'id_conjuge' => $request->id_conjuge,
                     'user_cadastro' => 1,
                     'whatsapp' => $request->whatsapp,
