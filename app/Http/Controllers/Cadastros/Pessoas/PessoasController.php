@@ -99,7 +99,7 @@ class PessoasController extends Controller
 
                 DB::table('tab_pessoa_filial')->insertGetId([
                     'nr_seq_pessoa' => $insert_pessoa,
-                    'nr_seq_filial' => $nr_seq_filial
+                    'nr_seq_filial' => 9
                 ]);
             }
 
